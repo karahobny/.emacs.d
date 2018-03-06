@@ -6,6 +6,7 @@
 ;;;            ever need to configure EMACS' internal browsers.
 
 ;;; Code:
+(require 'browse-url)
 (setq browse-url-browser-function 'browse-url-generic
       browse-url-generic-program "chrome")
 
