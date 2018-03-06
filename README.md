@@ -1,6 +1,9 @@
 # .emacs.d
 
+![emacs](https://raw.githubusercontent.com/karahobny/.emacs.d/master/emacs.png)
+
 ### packages currently used
+
  This configuration file depends on several packages I heartily recommend:
 + company
     + company-distel
