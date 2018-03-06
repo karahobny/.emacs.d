@@ -4,7 +4,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(blink-cursor-mode nil)
- '(browse-url-browser-function (quote eww-browse-url))
+ '(browse-url-browser-function (quote browse-url-generic))
  '(cua-mode t nil (cua-base))
  '(custom-enabled-themes (quote (xresources)))
  '(custom-safe-themes
