@@ -7,6 +7,11 @@
 (global-set-key (kbd "C-c C-m") #'execute-extended-command)
 (global-set-key (kbd "C-c b")   #'tmm-menubar)
 
+;; => whichkey.el settings
+(require 'which-key)
+(which-key-mode)
+(which-key-setup-side-window-right-bottom)
+
 ;; => windows & buffers
 ;; ==> buffers and switching them
 (global-set-key [mode-line mouse-4] #'next-buffer)

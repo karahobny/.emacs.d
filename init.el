@@ -23,6 +23,11 @@ Default is set to initialize the files separately.")
   "List of the user's configuration files to initialize.
 Checked only if load-all-files-from-config-folder set to nil")
 
+;; turn up the memory threshold to speed up startup
+;; source hlissner/doom-emacs
+(setq gc-cons-threshold 402653184
+      gc-cons-percentage 0.6)
+
 (setq load-all-files-from-config-folder nil
       user-config-files '("pkg-config"
                           "backup-config"
@@ -54,6 +59,11 @@ Checked only if load-all-files-from-config-folder set to nil")
     (mapc 'load-library user-config-files)
   (mapc 'load-library (file-expand-wildcards
                        (concat user-config-folder "/*.el*"))))
+
+;; reset garbage collection to reasonable defaults
+(add-hook 'emacs-startup-hook
+  (setq gc-cons-threshold 16777216
+        gc-cons-percentage 0.1))
 
 (provide 'init)
 ;;; init.el ends here
