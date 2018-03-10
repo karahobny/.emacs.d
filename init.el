@@ -1,7 +1,9 @@
 ;;; init.el --- initialization file.
 ;;; Commentary:
-;;;            initializes the separated configuration files from
-;;;            user-defined configuration-folder.
+;;;            Initializes the separated configuration files from user-defined
+;;;            configuration-folder.  Might considering switching to use-package
+;;;            but migration takes a while and I didn't see any boost to my
+;;;            startup time even though I deferred like crazy.
 
 ;;; Code:
 
@@ -42,6 +44,7 @@ Checked only if load-all-files-from-config-folder set to nil")
                           "scm-config"
                           "ml-config"
                           "company-config"
+                          "my-helm-config"
                           "fly-config"
                           "undo-tree-config"
                           "browser-config"

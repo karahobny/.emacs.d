@@ -13,8 +13,6 @@
 
 ;; => windows & buffers
 ;; ==> buffers and switching them
-(global-set-key (kbd "C-<right>")   #'next-buffer)
-(global-set-key (kbd "C-<left>")    #'previous-buffer)
 (global-set-key [mode-line mouse-4] #'next-buffer)
 (global-set-key [mode-line mouse-5] #'previous-buffer)
 
