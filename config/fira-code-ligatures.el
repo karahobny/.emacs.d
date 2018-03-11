@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t; -*-
 ;;; fira-code-ligatures.el --- ligatures for Fira Code -typeface
 ;;; Commentary:
 ;;;            This currently needs two different fonts to function.

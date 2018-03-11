@@ -1,15 +1,21 @@
+;;; -*- lexical-binding: t; -*-
 ;;; keybindings.el --- global emacs keybindings
 ;;; Commentary:
 ;;;            global keybindings not fit into any other category
 
 ;;; Code:
-;; => menubar
-(global-set-key (kbd "C-c b")   #'tmm-menubar)
 
-;; => whichkey.el settings
-(require 'which-key)
-(which-key-mode)
-(which-key-setup-side-window-right-bottom)
+(use-package tmm
+  :defer t
+  :bind  ("C-c b" . tmm-menubar))
+
+(use-package which-key
+  :defer    t
+  :commands (which-key-mode)
+  :init     (with-no-warnings
+              (progn
+                (which-key-setup-side-window-right-bottom)
+                (which-key-mode))))
 
 ;; => windows & buffers
 ;; ==> buffers and switching them
@@ -20,8 +26,10 @@
 
 ;; ==> windows and moving between them
 (windmove-default-keybindings    'meta)
-(global-set-key (kbd "M-<tab>") #'other-window)
-(global-set-key (kbd "M-o")     #'ace-window)
+
+(use-package ace-window
+  :commands (ace-window)
+  :bind     ("M-o" . ace-window))
 
 (global-set-key "\C-x2"
                 (lambda ()
@@ -39,8 +47,17 @@
 (global-set-key (kbd "<end>")  #'end-of-line)
 (global-set-key (kbd "C-c g")  #'goto-line)
 (global-set-key (kbd "RET")    #'newline-and-indent)
-(global-set-key (kbd "C-a")    #'back-to-indentation)
-(global-set-key (kbd "C-S-a")  #'beginning-of-line)
+
+(defun smart-line-beginning ()
+  "Move point to the beginning of text on the current line; if that is already
+the current position of point, then move it to the beginning of the line."
+  (interactive)
+  (let ((pt (point)))
+    (beginning-of-line-text)
+    (when (eq pt (point))
+      (beginning-of-line))))
+
+(global-set-key (kbd "C-a") #'smart-line-beginning)
 
 (defun kill-region-or-word ()
   "Call `kill-region' or `backward-kill-word'.
@@ -68,11 +85,15 @@ Depending on whether or not a region is selected."
 (global-set-key (kbd "C-<tab>") "\C-q\t")
 
 ;; ==> meta-; to comment/uncomment lines, regions etc.
-(global-set-key (kbd "M-;") #'comment-dwim-2)
+(use-package comment-dwim-2
+  :defer t
+  :bind  ("M-;" . comment-dwim-2))
 
 ;; ==> multiple cursors ala sublime
 (global-unset-key (kbd "M-<down-mouse-1>"))
-(global-set-key   (kbd "M-<mouse-1>") #'mc/add-cursor-on-click)
+(use-package multiple-cursors
+  :defer t
+  :bind ("M-<mouse-1>" . mc/add-cursor-on-click))
 
 (provide 'keybindings)
 ;;; keybindings.el ends here

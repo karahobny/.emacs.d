@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;;; mode-line-config.el --- prettifying the modeline
 ;;; Commentary:
 ;;;            Default EMACS' modeline is pretty uggo, so it needs a
@@ -6,19 +7,9 @@
 ;;;            format doesn't need to hold too much information.
 
 ;;; Code:
-;; => format
 
-;; (setq-default mode-line-format
-;;       (list
-;;        "%e"
-;;        "   "
-;;        mode-line-client
-;;        mode-line-frame-identification
-;;        mode-line-buffer-identification
-;;        "  "
-;;        mode-line-modes
-;;        mode-line-misc-info
-;;        mode-line-end-spaces))
+;; REFACTOR: use use-package's :diminish-property instead of these
+;;           macros. stuff cyphejor to use-package format too.
 
 ;; => abbreviating major modes with cyphejor.el
 (require 'cyphejor)
@@ -46,7 +37,7 @@
    ("mode"            "")
    ("package"         "↓")
    ("paradox"         "↓")
-   
+   ("nov"             "ℕ")
    ;; TODO: fix eshell-mode (shown as E)
    ("e"               "esh")
    ("shell"           "sh")
@@ -70,26 +61,37 @@
                       (diminish (quote ,mode)))))
                modes)))
 
+(defmacro diminish-single (file mode &optional replacement)
+  "Diminish a single MODE with optional REPLACEMENT name"
+  `(with-eval-after-load ,(symbol-name file)
+     (diminish (quote ,mode) ,replacement)))
+
 (diminish-all company
               flycheck
-              (geiser . geiser-autodoc-mode)
+              (geiser    . geiser-autodoc-mode)
               (helm-mode . helm-mode)
-              (simple . visual-line-mode)
-              (slime . slime-autodoc-mode)
+              (simple    . visual-line-mode)
+              (slime     . slime-autodoc-mode)
               undo-tree
               view
               which-key
               whitespace)
 
-(diminish 'isearch-mode "ⅈ")
+(diminish 'isearch-mode " ⅈ ")
 
-(with-eval-after-load 'abbrev
-  (diminish 'abbrev-mode "α"))
-(with-eval-after-load 'parinfer
-  (diminish 'parinfer-mode "π"))
-(with-eval-after-load 'slime
-  (diminish 'slime-mode "Σ"))
+(diminish-single abbrev   abbrev-mode   " α ")
+(diminish-single parinfer parinfer-mode " π ")
+(diminish-single slime    slime-mode    " Σ ")
 
+;; (with-eval-after-load 'abbrev
+;;   (diminish 'abbrev-mode "α"))
+;; (with-eval-after-load 'parinfer
+;;   (diminish 'parinfer-mode "π"))
+;; (with-eval-after-load 'slime
+;;   (diminish 'slime-mode "Σ"))
+
+(with-eval-after-load 'geiser
+  (diminish 'geiser-mode))
 ;; powerline/airline
 (require 'powerline)
 (require 'airline-themes)

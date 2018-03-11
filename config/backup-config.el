@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t; -*-
 ;;; backup-config.el --- backups and autosaves bundled in one
 ;;; Commentary:
 ;;;            directories, version-control and a function to

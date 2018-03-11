@@ -1,10 +1,13 @@
-;; scheme
-(autoload 'scheme-smart-complete "scheme-complete" nil t)
-(with-eval-after-load 'scheme
-  '(define-key scheme-mode-map "\e\t" 'scheme-smart-complete))
-;; => chicken
-(require 'chicken-scheme)
-(add-hook 'scheme-mode-hook 'setup-chicken-scheme)
-(define-key scheme-mode-map (kbd "C-?") 'chicken-show-help)
+;;; -*- lexical-binding: t -*-
+;;; scm-config.el --- scheme-related configuration
+;;; Commentary:
+;;;            There really is no need for much configuration when
+;;;            it comes to scheme-lang, since it is widely supported
+;;;            by default in Emacs.
+
+;;; Code:
+(use-package geiser
+  :defer t)
 
 (provide 'scm-config)
+;;; scm-config.el ends here

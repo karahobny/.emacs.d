@@ -1,4 +1,4 @@
-;;; lisp-config.el --- all things lisp
+;;; lisp-config.el --- lisp and elisp
 ;;; Commentary:
 ;;;            SLIMEY BLIMEY GRIMEY
 
@@ -12,16 +12,13 @@
 (defalias 'eis #'elisp-index-search)
 
 ;; => slime
-(require 'slime)
-(require 'slime-autoloads)
-(setq slime-lisp-implementations
-      '((sbcl ("/usr/local/bin/sbcl"))
-        (clisp ("/usr/local/bin/clisp"))))
-(setq slime-contribs '(slime-fancy))
-
-;; ==> slime autocomplete
-(require 'slime-company)
-(slime-setup '(slime-company))
+(use-package slime
+  :defer t
+  :config
+  (setq slime-lisp-implementations
+        '((sbcl ("/usr/local/bin/sbcl"))
+          (clisp ("/usr/local/bin/clisp"))))
+  (setq slime-contribs '(slime-fancy)))
 
 (provide 'lisp-config)
 ;;; lisp-config.el ends here

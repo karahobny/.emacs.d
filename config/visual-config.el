@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t; -*-
 ;;; visual-config.el --- all things aesthetic
 ;;; Commentary:
 ;;;            Line-numbers, riced scratch buffer, highlights etc.
@@ -5,13 +6,19 @@
 ;;; Code:
 (global-visual-line-mode)
 (show-paren-mode 1)
-(load-theme 'xresources t)
+(setq custom-safe-themes t)
 
-;; => nlinum (line numbers)
-(require 'nlinum)
-(setq nlinum-format "%4d ")
-(global-set-key (kbd "M-n") #'nlinum-mode)
-(add-hook 'prog-mode-hook   #'nlinum-mode)
+;; => theme
+;;(load-theme 'xresources t)
+(load-theme 'doom-one t)
+
+;; => line numbers
+(use-package nlinum
+  :defer t
+  :commands nlinum-mode
+  :init  (setq nlinum-format "%4d")
+  :bind  ("M-n" . nlinum-mode)
+  :hook  (prog-mode))
 
 ;; => scratch message
 (setq initial-scratch-message ";;
@@ -26,9 +33,12 @@
 \n")
 
 ;; => prettified symbols [TODO: add more]
-(global-prettify-symbols-mode)
-(setq prettify-symbols-alist
-      '(("lambda" . 955)))
+(use-package prettify-symbols
+  :defer  t
+  :init   (global-prettify-symbols-mode)
+  :config (setq prettify-symbols-alist
+                '(("lambda" . 955)))
+  :hook   (prog-mode))
 
 ;; => window-dividers
 (set-face-attribute 'vertical-border
@@ -37,32 +47,39 @@
 
 ;; => highligts
 ;; ==> highlight characters going over 80 char limit
-(require 'whitespace)
-(setq whitespace-line-column 80) ;; limit line length
-(setq whitespace-style '(face lines-tail))
-(add-hook 'prog-mode-hook 'whitespace-mode)
+;; FIXME: use-package's :hook not working for some reason.
+(use-package whitespace
+  :init  (with-no-warnings
+           (dolist (hook
+                    '(prog-mode-hook
+                      emacs-lisp-mode-hook
+                      lisp-mode-hook
+                      scheme-mode-hook
+                      text-mode-hook))
+            (add-hook hook #'whitespace-mode)))
+  :config (setq whitespace-line-column 82
+                  whitespace-style       '(face lines-tail)))
 
 ;; ==> highlight keywords lke FIXME, TODO etc.
+
+;; FIXME: prog-mode-hook used to be enough.
+;;        nowadays i have to hook it separately to all
+;;        major modes.
+
 (defun font-lock-comment-annotations ()
   "Highlight a bunch of well known comment annotations.
 This functions should be added to the hooks of major modes for programming."
   (font-lock-add-keywords
    nil '(("\\<\\(FIX\\(ME\\)?\\|TODO\\|OPTIMIZE\\|HACK\\|REFACTOR\\):"
           1 font-lock-warning-face t))))
-(add-hook 'prog-mode-hook #'font-lock-comment-annotations)
-
-;; => pleasure of perusing
-(add-hook 'doc-view-mode-hook
-          (lambda ()
-            (setq doc-view-fit-width-to-window t)
-            (local-set-key (kbd "C-p")    #'doc-view-previous-page)
-            (local-set-key (kbd "<up>")
-                           #'doc-view-previous-line-or-previous-page)
-            (local-set-key (kbd "C-n")    #'doc-view-next-page)
-            (local-set-key (kbd "<down>")
-                           #'doc-view-next-line-or-next-page)
-            (local-set-key (kbd "C-+")    #'doc-view-enlarge)
-            (local-set-key (kbd "C--")    #'doc-view-shrink)))
+(dolist (hook
+         '(prog-mode-hook
+           emacs-lisp-mode-hook
+           scheme-mode-hook
+           common-lisp-mode-hook
+           clojure-mode-hook))
+  (add-hook hook #'font-lock-comment-annotations))
 
 (provide 'visual-config)
 ;;; visual-config.el ends here
+1
