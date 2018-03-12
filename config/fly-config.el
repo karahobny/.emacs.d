@@ -8,12 +8,12 @@
 (use-package flycheck
   :defer  t
   :init   (progn
+            (add-hook 'flycheck-mode-hook #'flycheck-checkbashisms-setup)
+            (add-hook 'flycheck-mode-hook #'flycheck-haskell-setup)            
             (global-flycheck-mode)
             (flycheck-clojure-setup))
   :config (progn
-            (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
-            (add-hook 'flycheck-mode-hook #'flycheck-checkbashisms-setup)
-            (add-hook 'flycheck-mode-hook #'flycheck-haskell-setup)))
+            (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))))
 
 ;; => flymake
 (use-package flymake-shell

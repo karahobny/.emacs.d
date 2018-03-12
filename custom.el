@@ -5,6 +5,8 @@
  ;; If there is more than one, they won't work right.
  '(blink-cursor-mode nil)
  '(browse-url-browser-function (quote browse-url-generic))
+ '(cider-mode-line (quote (:eval (format " ℂρ "))))
+ '(cider-mode-line-show-connection nil)
  '(cua-mode t nil (cua-base))
  '(custom-enabled-themes (quote (doom-one)))
  '(custom-safe-themes
@@ -19,7 +21,7 @@
  '(minimap-recenter-type (quote middle))
  '(package-selected-packages
    (quote
-    (em-smart file doom-themes auto-compile which-key use-package company-distel erlang tuareg sml-mode diminish cyphejor airline-themes paradox shrink-path w3m smart-mode-line-powerline-theme smart-mode-line flycheck-haskell eshell-bookmark eshell-prompt-extras comment-dwim-2 punpun-theme pretty-mode nlinum-relative flymake-shell flylisp flycheck-clojure flycheck flycheck-checkbashisms helm-core parinfer org-download company clojure-mode-extra-font-locking clj-refactor centered-cursor-mode ampc alchemist aggressive-indent emms-player-mpv pdf-tools ace-window xkcd pelican-mode org-bullets nov mingus typo twittering-mode sx sicp 4clojure hackernews paredit esh-autosuggest company-shell company-go xresources-theme ereader slime-company spiral window-jump rc-mode undo-tree smart-comment slime markdown-preview-mode magithub magit cider chicken-scheme align-cljlet scheme-complete sudo-edit nlinum minimap xclip)))
+    (prettify-symbols delight em-smart file doom-themes auto-compile which-key use-package company-distel erlang tuareg sml-mode diminish cyphejor airline-themes paradox shrink-path w3m smart-mode-line-powerline-theme smart-mode-line flycheck-haskell eshell-bookmark eshell-prompt-extras comment-dwim-2 punpun-theme pretty-mode nlinum-relative flymake-shell flylisp flycheck-clojure flycheck flycheck-checkbashisms helm-core parinfer org-download company clojure-mode-extra-font-locking clj-refactor centered-cursor-mode ampc alchemist aggressive-indent emms-player-mpv pdf-tools ace-window xkcd pelican-mode org-bullets nov mingus typo twittering-mode sx sicp 4clojure hackernews paredit esh-autosuggest company-shell company-go xresources-theme slime-company spiral window-jump rc-mode undo-tree smart-comment slime magithub magit cider chicken-scheme align-cljlet scheme-complete sudo-edit nlinum minimap xclip)))
  '(paradox-automatically-star nil)
  '(paradox-github-token t)
  '(prettify-symbols-unprettify-at-point t)

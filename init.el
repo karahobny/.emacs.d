@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; -*-
+;;; -*- lexical-binding: t -*-
 ;;; init.el --- initialization file and gc-related config
 ;;; Commentary:
 ;;;            Initializes the separated configuration files from user-defined
@@ -11,9 +11,12 @@
 ;; commented out due to pkg-config.el handling package-initializing
 ;; (package-initialize)
 
+;;;; VARIABLES AND INITIALIZATION FUNCTION
+
 (defconst user-config-folder
   "~/.emacs.d/config"
   "User's defined folder for configuration-files.")
+
 (defconst user-custom-file
   (concat (file-name-as-directory user-emacs-directory) "custom.el")
   "User defined location for Emacs' customization-file")
@@ -29,6 +32,19 @@ Default is set to initialize the files separately (nil).")
   "List of the user's configuration files to initialize.
 Checked only if load-all-files-from-config-folder set to nil")
 
+(defvar compile-user-config-folder nil
+  "Check if user-config-folder has files to be byte-compiled.")
+(setq   compile-user-config-folder t)
+
+(defun initialize-user-config-files ()
+  "The money shot. Initializes either user's defined `user-config-files' in that
+order, or indiscriminately every .el/.elc file from `user-config-folder'."
+  (if (null load-all-files-from-config-folder)
+      (dolist (file user-config-files)
+        (load-library file))
+    (dolist (file (directory-files user-config-folder t ".\\.elc?$"))
+      (load-library file))))
+
 ;; speedup tricks from hlissner, bling, reddit, sx etc.
 ;; TODO: prefer gc-cons-percentage
 
@@ -40,6 +56,24 @@ Checked only if load-all-files-from-config-folder set to nil")
   "Placeholder for original file-name-handler-alist setting.")
 (setq file-name-handler-alist-orig file-name-handler-alist)
 
+;;;; MACROS
+;; these might be useful somewhere else too
+
+(defmacro defaliases (&rest aliases)
+  "Define ALIASES by looping through a list."
+  `(progn
+     ,@(mapcar (lambda (m)
+                  (cl-multiple-value-bind (abbrev action)
+                      (if (listp m)
+                          (values (car m) (cdr m))
+                        (values m))
+                    `(defalias
+                       (quote ,abbrev) (quote ,action))))
+               aliases)))
+
+;;;; INITIALIZATION
+
+;; => variables
 (progn  
   (setq inhibit-startup-screen t
         ;; garbage collection --- pre-startup
@@ -48,7 +82,6 @@ Checked only if load-all-files-from-config-folder set to nil")
         file-name-handler-alist nil
         ;; loading the neccesary configuration files
         load-prefer-newer t
-        load-all-files-from-config-folder nil
         user-config-files '("pkg-config"
                             "backup-config"
                             "keybindings"
@@ -61,67 +94,53 @@ Checked only if load-all-files-from-config-folder set to nil")
                             "c-config"
                             "erlang-config"
                             "lisp-config"
+                            "clj-config"
                             "scm-config"
                             "ml-config"
                             "company-config"
                             "my-helm-config"
                             "fly-config"
                             "undo-tree-config"
+                            "yas-config"
                             "browser-config"
                             "mode-line-config"
                             "fira-code-ligatures")))
 
-;; system
+;; => loading config-files
 (add-to-list 'load-path user-config-folder)
-(byte-recompile-directory (expand-file-name user-config-folder) 0)
-
-;; user configuration
-;; => custom-file
+(when (bound-and-true-p compile-user-config-folder)
+  (byte-recompile-directory (expand-file-name user-config-folder) 0))
 (setq custom-file user-custom-file)
 (load custom-file 'no-error 'no-message)
+(initialize-user-config-files)
 
-;; => separate configuration
 ;; REFACTOR: there are faster ways to do this.
-;;           there simply has to be.
-(if (null load-all-files-from-config-folder)
-    (dolist (file user-config-files)
-      (load-library file))
-  (dolist (file (directory-files user-config-folder t ".\\.elc?$"))
-    (load-library file)))
+;;           there simply has to be. (TODO: benchmark dolist vs mapc(ar))
 
-;; ==> workaround `bsd ls` not having --dired
-(require 'dired)
-(with-eval-after-load 'dired
-  (setq dired-use-ls-dired nil))
 
-;; garbage collection --- after startup
-;; => reset garbage collection to reasonable defaults
+;;;; GARBAGE COLLECTION
+;; => functions for setting current gc-state
+(defun gc-eval-at-startup ()
+  "Garbage collection to handle at Emacs' startup."
+  (garbage-collect)
+  (setq gc-cons-threshold garbage-collect-min-num
+        file-name-handler-alist file-name-handler-alist-orig)
+  (makunbound 'file-name-handler-alist-orig))
 
-;; (add-hook 'after-init-hook
-;;           (lambda ()
-;;             (setq gc-cons-threshold garbage-collect-min-num
-;;                   file-name-handler-alist file-name-handler-alist-origin)
-;;             (makunbound 'file-name-handler-alist-origin)))
+(defun gc-eval-max-threshold ()
+  "Set `gc-cons-threshold' to maximum defined amount."
+  (setq gc-cons-threshold garbage-collect-max-num))
+(defun gc-eval-min-threshold ()
+  "Set `gc-cons-threshold' to minimum defined amount."
+  (setq gc-cons-threshold garbage-collect-min-num))
 
-;; i found this to be snappier at startup since gc is not set
-;; immediately to low enough threshold to facilitate a garbage-collect
-(run-with-idle-timer 5 nil
-                     (lambda ()
-                       (garbage-collect)
-                       (setq gc-cons-threshold garbage-collect-min-num
-                             file-name-handler-alist file-name-handler-alist-orig)
-                       (makunbound 'file-name-handler-alist-origin)))
-
-;; => minibuffer gc (opening one maxes out threshold and vice versa)
-(add-hook 'minibuffer-setup-hook
-          (lambda ()
-            (setq gc-cons-threshold garbage-collect-max-num)))
-(add-hook 'minibuffer-exit-hook
-          (lambda ()
-            (setq gc-cons-threshold garbage-collect-min-num)))
-
-;; => garbage collect whenever focus is lost and/or idle
-(add-hook 'focus-out-hook #'garbage-collect)
+;; => hooks
+;; (add-hook 'after-init-hook #'gc-eval-at-startup
+(progn
+  (run-with-idle-timer 5 nil       #'gc-eval-at-startup)
+  (add-hook 'minibuffer-setup-hook #'gc-eval-max-threshold)
+  (add-hook 'minibuffer-exit-hook  #'gc-eval-min-threshold)
+  (add-hook 'focus-out-hook        #'garbage-collect))
 
 (provide 'init)
 ;;; init.el ends here

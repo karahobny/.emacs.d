@@ -1,18 +1,19 @@
-;;; doc-config.el --- configuration for viewing epub/pdf etc. documents
+;;; doc-config.el --- configuration regarding perusal of documentative files
 ;;; Commentary:
-;;;             Ensuring nov is used automatically on epub-files and docview on pdf's.
-;;;             Atleast for now.
+;;;             Ensuring `nov-mode' is used automatically on epub-files and
+;;;             `docview' on pdf's.  Atleast for now.  
 
 ;;; Code:
 ;; => nov
 (use-package nov
-  :defer t
-  :mode  ("\\.epub\\'" . nov-mode)
-  :bind  (:map nov-mode-map
-              ("C-p" . nov-previous-document)
-              ("C-n" . nov-next-document)
-              ("p"   . nov-scroll-up)
-              ("n"   . nov-scroll-down)))
+  :defer    t
+  :commands nov-mode
+  :mode     ("\\.epub\\'" . nov-mode)
+  :bind     (:map nov-mode-map
+                  ("C-p" . nov-previous-document)
+                  ("C-n" . nov-next-document)
+                  ("p"   . nov-scroll-up)
+                  ("n"   . nov-scroll-down)))
 
 ;; => markdown
 (use-package markdown-mode

@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; -*-
+;;; -*- lexical-binding: t -*-
 ;;; erlang-config.el --- erlang/distel settings for EMACS
 ;;; Commentary:
 ;;;            Setting up erlang-mode, flycheck-hooks and distel.

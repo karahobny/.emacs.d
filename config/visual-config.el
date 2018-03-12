@@ -10,16 +10,18 @@
 
 ;; => theme
 ;;(load-theme 'xresources t)
-(load-theme 'doom-one t)
+(with-no-warnings
+  (load-theme 'doom-one t))
 
 ;; => line numbers
 (use-package nlinum
   :defer t
   :commands nlinum-mode
-  :init  (setq nlinum-format "%4d")
-  :bind  ("M-n" . nlinum-mode)
-  :hook  (prog-mode))
-
+  :init     (progn
+              (add-hook 'prog-mode #'nlinum-mode)
+              (setq nlinum-format "%4d"))
+  :bind  ("M-n" . nlinum-mode))
+  
 ;; => scratch message
 (setq initial-scratch-message ";;
 ;;	 　　∧＿∧
@@ -33,12 +35,14 @@
 \n")
 
 ;; => prettified symbols [TODO: add more]
-(use-package prettify-symbols
+(use-package prog-mode
+  :ensure f
   :defer  t
-  :init   (global-prettify-symbols-mode)
+  :init   (progn
+            (global-prettify-symbols-mode)
+            (add-hook 'prog-mode #'prettify-symbols-mode))
   :config (setq prettify-symbols-alist
-                '(("lambda" . 955)))
-  :hook   (prog-mode))
+                '(("lambda" . 955))))
 
 ;; => window-dividers
 (set-face-attribute 'vertical-border
@@ -49,14 +53,17 @@
 ;; ==> highlight characters going over 80 char limit
 ;; FIXME: use-package's :hook not working for some reason.
 (use-package whitespace
-  :init  (with-no-warnings
-           (dolist (hook
-                    '(prog-mode-hook
-                      emacs-lisp-mode-hook
-                      lisp-mode-hook
-                      scheme-mode-hook
-                      text-mode-hook))
-            (add-hook hook #'whitespace-mode)))
+  :ensure f
+  :defer  t
+  :init   (with-no-warnings
+            (progn
+              (dolist (hook
+                        '(prog-mode-hook
+                          emacs-lisp-mode-hook
+                          lisp-mode-hook
+                          scheme-mode-hook
+                          text-mode-hook))
+                (add-hook hook #'whitespace-mode))))
   :config (setq whitespace-line-column 82
                   whitespace-style       '(face lines-tail)))
 

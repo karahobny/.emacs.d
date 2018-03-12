@@ -19,9 +19,17 @@
 
 (progn
   (require 'use-package)
+  (require 'diminish)
   (setq use-package-always-defer  t
         use-package-always-ensure t
         use-package-verbose       t))
+
+;; => dired (stuck here for the meantime instead of init.el)
+(use-package dired
+  :ensure f
+  :defer  t
+  :config (progn
+            (setq dired-use-ls-dired nil)))
 
 ;; => auto-compile
 (use-package auto-compile
@@ -33,15 +41,24 @@
   :config (setq auto-compile-display-buffer   nil
                 auto-compile-update-autoloads t))
 ;; => paradox
-;; NOT SURE WHERE (PARADOX-ENABLE) GOES
+
+;; REFACTOR: `paradox-enable' isn't showing github stars when paradox is executed
+;;           through `package-list-packages', so in the meantime a mean defalias
+;;           will do the trick. hopefully it doesn't break anything.
+
 (use-package paradox
-  :demand   t
+  :defer    t
   :commands (paradox-upgrade-packages paradox-list-packages)
   :config   (with-no-warnings
               (progn
                 (setq paradox-lines-per-entry 2
                       paradox-execute-asynchronously t)
-                (paradox-enable)))
+                (paradox-enable)
+                (defalias package-list-packages
+                  #'paradox-list-packages)))
+  :init     (progn
+              (remove-hook 'paradox--report-buffer-print
+                           #'paradox-after-execute-functions))
   :bind     ("C-x C-u" . paradox-upgrade-packages)
             ("C-x C-p" . paradox-list-packages))
 

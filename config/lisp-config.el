@@ -4,12 +4,13 @@
 
 ;;; Code:
 ;; => aliases
-(defalias 'eb  #'eval-buffer)
-(defalias 'er  #'eval-region)
-(defalias 'ee  #'eval-expression)
-(defalias 'elm #'emacs-lisp-mode)
-(defalias 'lim #'lisp-interaction-mode)
-(defalias 'eis #'elisp-index-search)
+(defaliases
+  (eb . eval-buffer)
+  (er . eval-region)
+  (ee . eval-expression)
+  (elm . emacs-lisp-mode)
+  (lim . lisp-interaction-mode)
+  (eis . elisp-index-search))
 
 ;; => slime
 (use-package slime
@@ -19,6 +20,13 @@
         '((sbcl ("/usr/local/bin/sbcl"))
           (clisp ("/usr/local/bin/clisp"))))
   (setq slime-contribs '(slime-fancy)))
+
+;; => initialize new emacs lisp files
+;; (add-hook 'emacs-lisp-mode-hook
+;;           (lambda ()
+;;             (when (and (bobp) (eobp))
+;;               (setq lexical-binding t)
+;;               (insert ";;; -*- lexical-binding: t; -*-\n")))
 
 (provide 'lisp-config)
 ;;; lisp-config.el ends here

@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;;; mingus-config.el --- mpd client
 ;;; Commentary:
 ;;;            mingus can get tricky with it's handling of line
