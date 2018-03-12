@@ -3,9 +3,9 @@
 ![emacs](https://raw.githubusercontent.com/karahobny/.emacs.d/master/emacs.png)
 
 #### table of contents
-+ [style](#style)
-+ [packages](#packages)
-+ [TODO](#TODO)
+1. [style](#style)
+2. [packages](#packages)
+3. [TODO](#todo)
 
 ### style
 ##### aka idiosyncracies of my configuration
