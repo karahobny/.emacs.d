@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; -*-
+;;; -*- lexical-binding: t -*-
 ;;; pkg-config.el --- package management
 ;;; Commentary:
 ;;;            The usual settings for MELPA and Paradox to replace the
@@ -42,9 +42,8 @@
                 auto-compile-update-autoloads t))
 ;; => paradox
 
-;; REFACTOR: `paradox-enable' isn't showing github stars when paradox is executed
-;;           through `package-list-packages', so in the meantime a mean defalias
-;;           will do the trick. hopefully it doesn't break anything.
+;; FIXME: `paradox-enable' isn't showing github stars when paradox is
+;;        executed through `package-list-packages'.
 
 (use-package paradox
   :defer    t
@@ -53,9 +52,7 @@
               (progn
                 (setq paradox-lines-per-entry 2
                       paradox-execute-asynchronously t)
-                (paradox-enable)
-                (defalias package-list-packages
-                  #'paradox-list-packages)))
+                (paradox-enable)))
   :init     (progn
               (remove-hook 'paradox--report-buffer-print
                            #'paradox-after-execute-functions))

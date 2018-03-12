@@ -6,9 +6,11 @@
 ;;; Code:
 (use-package company
   :defer  t
-  :init   (global-company-mode)
+  :init   (with-no-warnings
+            (progn
+              (global-company-mode)))
   :bind   (:map company-active-map
-            ("tab" . company-complete))
+                ("tab" . company-complete))
   :config (setq company-selection-wrap-around t))
 
 ;; => slime
@@ -18,9 +20,11 @@
 
 ;; => erlang
 (use-package company-distel
-  :defer t
-  :init  (setq company-backends '(company-distel))
-  :hook  (erlang-mode-hook))
+  :defer  t
+  :config (setq company-backends '(company-distel))
+  :init   (with-no-warnings
+            (progn
+              (add-hook 'erlang-mode-hook #'company-distel))))
 
 (provide 'company-config)
 ;;; company-config.el ends here

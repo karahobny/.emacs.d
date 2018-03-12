@@ -15,7 +15,6 @@
   "Connect with `cider-connect' to an already running REPL at localhost:7800"
   (interactive)
   (cider-connect "localhost" "7800"))
-(defalias 'cctc #'cider-connect-to-localhost)
 
 (defun establish-cider-connection ()
   "Start Leiningen REPL from `eshell' with default settings localhost:7800.
@@ -24,7 +23,6 @@ Then proceed with `cider-connect' to connect into it with `cider-connect-to-loca
   (eshell-command
    (format "lein repl :headless localhost :port 7800"))
   (cider-connect-to-localhost))
-(defalias 'ecc #'establish-cider-connection)
 
 (use-package cider
   :defer  t

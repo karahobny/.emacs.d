@@ -36,6 +36,9 @@ Checked only if load-all-files-from-config-folder set to nil")
   "Check if user-config-folder has files to be byte-compiled.")
 (setq   compile-user-config-folder t)
 
+;; REFACTOR: there are faster ways to do this, probably.
+;;           there simply has to be. (TODO: benchmark dolist vs mapc(ar))
+
 (defun initialize-user-config-files ()
   "The money shot. Initializes either user's defined `user-config-files' in that
 order, or indiscriminately every .el/.elc file from `user-config-folder'."
@@ -56,23 +59,7 @@ order, or indiscriminately every .el/.elc file from `user-config-folder'."
   "Placeholder for original file-name-handler-alist setting.")
 (setq file-name-handler-alist-orig file-name-handler-alist)
 
-;;;; MACROS
-;; these might be useful somewhere else too
-
-(defmacro defaliases (&rest aliases)
-  "Define ALIASES by looping through a list."
-  `(progn
-     ,@(mapcar (lambda (m)
-                  (cl-multiple-value-bind (abbrev action)
-                      (if (listp m)
-                          (values (car m) (cdr m))
-                        (values m))
-                    `(defalias
-                       (quote ,abbrev) (quote ,action))))
-               aliases)))
-
 ;;;; INITIALIZATION
-
 ;; => variables
 (progn  
   (setq inhibit-startup-screen t
@@ -103,6 +90,7 @@ order, or indiscriminately every .el/.elc file from `user-config-folder'."
                             "undo-tree-config"
                             "yas-config"
                             "browser-config"
+                            "alias-config"
                             "mode-line-config"
                             "fira-code-ligatures")))
 
@@ -113,10 +101,6 @@ order, or indiscriminately every .el/.elc file from `user-config-folder'."
 (setq custom-file user-custom-file)
 (load custom-file 'no-error 'no-message)
 (initialize-user-config-files)
-
-;; REFACTOR: there are faster ways to do this.
-;;           there simply has to be. (TODO: benchmark dolist vs mapc(ar))
-
 
 ;;;; GARBAGE COLLECTION
 ;; => functions for setting current gc-state
