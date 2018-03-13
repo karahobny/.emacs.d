@@ -6,6 +6,7 @@
 ;;; Code:
 (global-visual-line-mode)
 (show-paren-mode 1)
+(winner-mode 1)
 (setq custom-safe-themes t)
 
 ;; => theme

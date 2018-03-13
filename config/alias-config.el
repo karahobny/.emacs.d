@@ -19,8 +19,8 @@
                        (quote ,abbrev) (quote ,action))))
                aliases)))
 
-;; => elisp
 (defaliases
+  ;; => elisp
   (eb . eval-buffer)
   (er . eval-region)
   (ee . eval-expression)
@@ -31,7 +31,6 @@
   (cctc . cider-connect-to-localhost)
   (ecc  . establish-cider-connection)
   ;; => &rest
-  (package-list-packages . paradox-list-packages)
   (list-buffers          . ibuffer)
   (cc                    . calc))
 

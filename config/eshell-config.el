@@ -22,7 +22,7 @@
             (progn
               (add-hook 'eshell-banner-load-hook #'my-eshell-banner)
               (add-hook 'eshell-mode-hook        #'eshell-bookmark-setup)))
-  :bind ("C-x !" . eshell))
+  :bind ("C-c §" . eshell))
 
 (use-package em-smart
   :defer  t
