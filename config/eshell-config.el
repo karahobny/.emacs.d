@@ -6,7 +6,12 @@
 
 ;;; Code:
 
-(defun my-eshell-banner ()
+(defvar eshell-banner-message nil
+  "Banner for Eshell to replace the default one.")
+
+(defun theo-eshell-banner ()
+  "If 'theo'-program found, uses it in the Eshell banner string.
+Otherwise defaults to Eshell-default welcoming you."
   (setq eshell-banner-message
         (if (executable-find "theo")
             (concat (shell-command-to-string "theo")
@@ -20,9 +25,10 @@
   :init   
   :config (with-no-warnings
             (progn
-              (add-hook 'eshell-banner-load-hook #'my-eshell-banner)
-              (add-hook 'eshell-mode-hook        #'eshell-bookmark-setup)))
-  :bind ("C-c §" . eshell))
+              (add-hook 'eshell-banner-load-hook #'theo-eshell-banner)))
+  :bind   (("C-c §" . eshell)
+           ("C-x §" . eshell))
+  :hook   (eshelll-mode . eshell-bookmark-setup))
 
 (use-package em-smart
   :defer  t

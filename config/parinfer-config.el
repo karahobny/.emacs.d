@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; -*-
+;;; -*- lexical-binding: t -*-
 ;;; parinfer-config.el --- extensions, hooks, etc.
 ;;; Commentary:
 ;;;            parinfer needs to be hooked to programming

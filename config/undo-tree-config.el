@@ -3,12 +3,14 @@
 ;;;            Setting undo-tree-mode as global and keybindings for it.
 
 ;;; Code:
-(require 'undo-tree)
-(global-undo-tree-mode)
-
-;; => keybindings
-(global-set-key (kbd "C-z") 'undo-tree-undo)
-(global-set-key (kbd "C-r") 'undo-tree-redo)
+(use-package undo-tree
+  :defer    t
+  :diminish undo-tree-mode
+  :config   (global-undo-tree-mode)
+  :bind     (("C-z"   . undo-tree-undo)
+             ("C-r"   . undo-tree-redo)
+             ("C-Z"   . undo-tree-redo)
+             ("C-c v" . undo-tree-visualize)))
 
 (provide 'undo-tree-config)
 ;;; undo-tree-config.el ends here

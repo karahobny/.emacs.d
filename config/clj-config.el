@@ -32,10 +32,11 @@ Then proceed with `cider-connect' to connect into it with `cider-connect-to-loca
                 cider-repl-result-prefix ";; → "
                 cider-repl-display-help-banner nil)
   :init   (progn
+            ;;(add-hook 'clojure-mode-hook    #'establish-cider-connection)))
             (add-hook 'cider-repl-mode-hook
                       #'cider-company-enable-fuzzy-completion)
-            (add-hook 'cider-repl-mode-hook #'eldoc-mode)
-            (add-hook 'clojure-mode-hook    #'establish-cider-connection)))
+            (add-hook 'cider-repl-mode-hook #'eldoc-mode)))
+
 
 (use-package clj-refactor
   :defer  t

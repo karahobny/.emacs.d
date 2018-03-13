@@ -1,0 +1,32 @@
+;;; -*- mode: Emacs-Lisp; lexical-binding: t; -*-
+;;; .exwm-x --- Emacs X Window Manager (X) configuration
+;;; Commentary:
+;;;            EXWN-X-specific settings for managing windows through Emacs.
+;;;            This file is supposed to be located in user's `$HOME`.
+;;;            Then ~/.xinitrc needs to end on this note =>
+;;;            `exec dbus-launch --exit-with-session emacs --eval '(require (quote exwmx-loader))'`
+
+;;; Code:
+(require 'exwm)
+(require 'exwm-x)
+(require 'exwmx-example)
+
+;; => keybindings
+(exwmx-input-set-key (kbd "C-t v")   #'exwmx:file-browser)
+(exwmx-input-set-key (kbd "C-t f")   #'exwmx:web-browser)
+(exwmx-input-set-key (kbd "C-t e")   #'exwmx:emacs)
+(exwmx-input-set-key (kbd "C-t z")   #'exwmx-floating-hide-all)
+(exwmx-input-set-key (kbd "C-t b")   #'exwmx-switch-application)
+(exwmx-input-set-key (kbd "C-t p")   #'exwmx-dmenu)
+(exwmx-input-set-key (kbd "C-t C-f") #'exwmx-floating-toggle-floating)
+
+;; (exwmx-input-set-key (kbd "s-1")     #'exwmx-switch-to-1-workspace)
+;; (exwmx-input-set-key (kbd "s-2")     #'exwmx-switch-to-2-workspace)
+;; (exwmx-input-set-key (kbd "s-3")     #'exwmx-switch-to-3-workspace)
+;; (exwmx-input-set-key (kbd "s-4")     #'exwmx-switch-to-4-workspace)
+
+;; => variables
+(setq exwm-floating-border-width 1)
+(setq exwm-floating-border-color "#3f3f3f")
+
+;;; .exwm-x ends here
