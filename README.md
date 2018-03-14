@@ -2,6 +2,10 @@
 
 ![emacs](https://raw.githubusercontent.com/karahobny/.emacs.d/master/emacs.png)
 
+### disclaimer
+this README relly exists more for me than anyone else, but there might be something
+worth your while in this configuration.
+
 #### table of contents
 1. [style](#style)
 2. [packages](#packages)
@@ -27,7 +31,7 @@ This configuration file depends on several packages I heartily recommend:
     + company-distel
     + company-shell
     + slime-company
-+ programming modes: 
++ programming modes:
 	+ ML:
     	+ tuareg
     	+ sml-mode
@@ -39,13 +43,11 @@ This configuration file depends on several packages I heartily recommend:
         + slime
     + misc:
     	+ erlang-mode
-+ flycheck/make:
-	+ flymake:
-	    + flymake-shell
-    + flycheck:
-        + flycheck-haskell
-        + flycheck-checkbashims
-        + flycheck-clojure
+
++ flycheck:
+    + flycheck-haskell
+    + flycheck-checkbashims
+    + flycheck-clojure
 + eshell:
     + eshell-bookmark
 + lost in sea of parentheses:
@@ -57,31 +59,38 @@ This configuration file depends on several packages I heartily recommend:
     + cyphejor
     + diminish
     + doom-themes
-    + airline-themes
+    + spaceline-all-the-icons
 + mingus
 + which-key
 + paradox
 + undo-tree
 + multiple-cursors
+* smooth-scrolling
 
-And many more... (to be updated)
+And as always, too many more... (to be updated)
 
 ### TODO
 - [ ] helm looks really dope, gotta get more into it
-- [ ] fix some broken shit
-- [ ] test some broken shit
-- [ ] look for more ways to shave off time from startup initialization
+- [x] fix some broken shit
+- [x] test some broken shit
+- [x] look for more ways to shave off time from startup initialization
 
-> yeah yeah i know about emacs --daemon and emacs-client
-> but mostly i need a way to start quickly to test my configs are in order.
+>> yeah yeah i know about emacs --daemon and emacs-client
+>> but mostly i need a way to start quickly to test my configs are in order.
+
+> now down to 0.9 secs with just your run-of-the-mill emacs. need to benchmark
+> more to make sure it's not an anomaly of some sort.
 
 - [ ] the initialization loop optimization
 	- [ ] dolist vs mapc(ar) -variants.
 
-> apparently the c-builtins are what i should be looking for, but `dash.el` had
-> some nice benchmarks considering it consists solely of higher-order functions.
+>> apparently the c-builtins are what i should be looking for, but `dash.el` had
+>> some nice benchmarks considering it consists solely of higher-order functions.
+
+> yeah `dolist` seems to do the job easily, though i might still look into this
+> if it can shave me atleast a quarter of a second. otherwise its a waste of my
+> time
 
 - [ ] get into org-mode, there's got to be some essence behind its hype
 - [ ] perhaps most of all what i should do is code more and fiddle less with editor configuration.
 - [ ] fix markdown-preview-mode!
-

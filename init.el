@@ -1,5 +1,5 @@
-;;; -*- lexical-binding: t -*-
-;;; init.el --- initialization file and gc-related config
+;;; -*- lexical-binding: t; -*-
+;;; init.el --- Unitialization file and gc-related config
 ;;; Commentary:
 ;;;            Initializes the separated configuration files from user-defined
 ;;;            configuration-folder.  Might considering switching to use-package
@@ -7,14 +7,11 @@
 ;;;            startup time even though I deferred like crazy.
 
 ;;; Code:
-
-;; commented out due to pkg-config.el handling package-initializing
 ;; (package-initialize)
 
-;;;; VARIABLES AND INITIALIZATION FUNCTION
-
+;;;; ** VARIABLES AND INITIALIZATIVE FUNCTIONS **
 (defconst user-config-folder
-  "~/.emacs.d/config"
+  "~/.emacs.d/init"
   "User's defined folder for configuration-files.")
 
 (defconst user-custom-file
@@ -34,7 +31,7 @@ Checked only if load-all-files-from-config-folder set to nil")
 
 (defvar compile-user-config-folder nil
   "Check if user-config-folder has files to be byte-compiled.")
-(setq   compile-user-config-folder t)
+(setq compile-user-config-folder t)
 
 ;; REFACTOR: there are faster ways to do this, probably.
 ;;           there simply has to be. (TODO: benchmark dolist vs mapc(ar))
@@ -44,14 +41,14 @@ Checked only if load-all-files-from-config-folder set to nil")
 order, or indiscriminately every .el/.elc file from `user-config-folder'."
   (if (null load-all-files-from-config-folder)
       (dolist (file user-config-files)
-        (load-library file))
+        (require file))
     (dolist (file (directory-files user-config-folder t ".\\.elc?$"))
       (load-library file))))
 
 ;; speedup tricks from hlissner, bling, reddit, sx etc.
 ;; TODO: prefer gc-cons-percentage
 
-(defvar garbage-collect-max-num most-positive-fixnum
+(defvar garbage-collect-max-num (* 1024 800000)
   "Maximum threshold for garbage collection.")
 (defvar garbage-collect-min-num 800000
   "Minimum threshold for garbage collection.")
@@ -59,50 +56,28 @@ order, or indiscriminately every .el/.elc file from `user-config-folder'."
   "Placeholder for original file-name-handler-alist setting.")
 (setq file-name-handler-alist-orig file-name-handler-alist)
 
-;;;; INITIALIZATION
-;; => variables
-(progn  
-  (setq inhibit-startup-screen t
-        ;; garbage collection --- pre-startup
-        gc-cons-threshold garbage-collect-max-num
-        ;; empty the file-name-handler-alist
-        file-name-handler-alist nil
-        ;; loading the neccesary configuration files
-        load-prefer-newer t
-        user-config-files '("pkg-config"
-                            "backup-config"
-                            "keybindings"
-                            "visual-config"
-                            "mingus-config"
-                            "eshell-config"
-                            "doc-config"
-                            "parinfer-config"
-                            "c-config"
-                            "erlang-config"
-                            "lisp-config"
-                            "clj-config"
-                            "scm-config"
-                            "ml-config"
-                            "company-config"
-                            "my-helm-config"
-                            "fly-config"
-                            "undo-tree-config"
-                            "yas-config"
-                            "browser-config"
-                            "alias-config"
-                            "mode-line-config"
-                            "fira-code-ligatures")))
-
-;; => loading config-files
 (add-to-list 'load-path user-config-folder)
 (when (bound-and-true-p compile-user-config-folder)
   (byte-recompile-directory (expand-file-name user-config-folder) 0))
+
+;;;; ** INITIALIZATION **
+(setq inhibit-startup-screen t
+      gc-cons-threshold garbage-collect-max-num
+      file-name-handler-alist nil
+      load-prefer-newer t
+      user-config-files '("init-system"
+                          "init-multimedia"
+                          "init-aliases"
+                          "init-lispy"
+                          "init-ml"
+                          "init-prog"
+                          "init-gui"
+                          "init-fira-code-ligatures"))
 (setq custom-file user-custom-file)
 (load custom-file 'no-error 'no-message)
 (initialize-user-config-files)
 
-;;;; GARBAGE COLLECTION
-;; => functions for setting current gc-state
+;;;; ** GARBAGE COLLECTION **
 (defun gc-eval-at-startup ()
   "Garbage collection to handle at Emacs' startup."
   (garbage-collect)
@@ -117,13 +92,10 @@ order, or indiscriminately every .el/.elc file from `user-config-folder'."
   "Set `gc-cons-threshold' to minimum defined amount."
   (setq gc-cons-threshold garbage-collect-min-num))
 
-;; => hooks
-;; (add-hook 'after-init-hook #'gc-eval-at-startup
-(progn
-  (run-with-idle-timer 5 nil       #'gc-eval-at-startup)
-  (add-hook 'minibuffer-setup-hook #'gc-eval-max-threshold)
-  (add-hook 'minibuffer-exit-hook  #'gc-eval-min-threshold)
-  (add-hook 'focus-out-hook        #'garbage-collect))
+(run-with-idle-timer 5 nil #'gc-eval-at-startup)
+(add-hook 'minibuffer-setup-hook #'gc-eval-max-threshold)
+(add-hook 'minibuffer-exit-hook #'gc-eval-min-threshold)
+(add-hook 'focus-out-hook #'garbage-collect)
 
 (provide 'init)
 ;;; init.el ends here
