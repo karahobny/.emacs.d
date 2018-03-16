@@ -1,6 +1,5 @@
 ;;; -*- lexical-binding: t; -*-
-;;; init-fira-code-ligatures.el --- Ligatures for Fira Code -typeface
-
+;;; fira-code-ligatures.el --- ligatures for Fira Code -typeface
 ;;; Commentary:
 ;;;            This currently needs two different fonts to function.
 ;;;            The regular ``Fira Code'' and ``Fira Code Symbol'',
@@ -8,11 +7,13 @@
 ;;;            specific unicode glyphs.
 
 ;;; Code:
+;; => set fonts
 (add-hook 'after-make-frame-functions
           (lambda (frame) (set-fontset-font t
                                        '(#Xe100 . #Xe16f) "Fira Code Symbol")))
 (set-fontset-font t '(#Xe100 . #Xe16f) "Fira Code Symbol")
 
+;; => ligature conversion
 (defconst fira-code-font-lock-keywords-alist
   (mapcar (lambda (regex-char-pair)
             `(,(car regex-char-pair)
@@ -139,9 +140,10 @@
   "Add the Fira Code ligatures from Fira Code Symbol to selected keywords."
   (font-lock-add-keywords nil fira-code-font-lock-keywords-alist))
 
-(add-hook 'prog-mode-hook #'add-fira-code-symbol-keywords)
-(add-hook 'scheme-mode-hook #'add-fira-code-symbol-keywords)
+;; => ligature hooks
+(add-hook 'prog-mode-hook    #'add-fira-code-symbol-keywords)
+(add-hook 'scheme-mode-hook  #'add-fira-code-symbol-keywords)
 (add-hook 'clojure-mode-hook #'add-fira-code-symbol-keywords)
 
-(provide 'init-fira-code-ligatures)
-;;; init-fira-code-ligatures.el ends here
+(provide 'fira-code-ligatures)
+;;; fira-code-ligatures.el ends here
