@@ -2,19 +2,17 @@
 ;;; init-gui.el --- prettifying Emacs piece-by-piece
 
 ;;; Commentary:
-;;;            Default EMACS' modeline is pretty uggo, so it needs a
-;;;            huge overhaul, mostly abbreviating or hiding a lot of
-;;;            unneccesary minor modes, but also major. I went with
-;;;            spaceline, since I am a sucker for pretty, shiny things.
+;;;            General user-interface stuff that felt out of place
+;;;            anywhere else. (Modeline used to cover almost half of this
+;;;            so I decided it was time to break out it an init-file of
+;;;            it's own.
 
 ;;; Code:
-;;;; ** USER THEMES **
-(setq custom-safe-themes t)
-(use-package all-the-icons)
-
 ;;;; ** BUFFERS **
-(global-visual-line-mode t)
-(show-paren-mode         t)
+(global-visual-line-mode 1)
+(show-paren-mode         1)
+
+(defalias 'list-buffers #'ibuffer)
 
 (global-set-key (kbd "C-<right>") #'next-buffer)
 (global-set-key (kbd "C-<left>")  #'previous-buffer)
@@ -35,14 +33,23 @@
 \n")
 
 (use-package nlinum
-  :defer t
+  :demand t
   :init
   (setq nlinum-format "%4d ")
   :config
-  (add-hook 'prog-mode #'nlinum-mode)
-  :bind
-  ("M-n" . nlinum-mode))
+  (add-hook 'prog-mode-hook #'nlinum-mode))
 
+(use-package nlinum-relative
+  :after nlinum
+  :bind
+  (("M-n"     . nlinum-relative-toggle)
+   ("C-c r"   . nlinum-relative-toggle)
+   ("C-c C-r" . nlinum-relative-toggle))
+  :custom-face
+  (nlinum-relative-current-face
+   ((t :inherit linum :foreground "#bbc2cf" :background "#23272e" :weight bold))))
+
+;; prog-mode initialized just for ``prettify-symbols-mode''
 (use-package prog-mode
   :ensure f
   :defer t
@@ -50,11 +57,12 @@
   (prettify-symbols-mode global-prettify-symbols-mode)
   :init
   (setq prettify-symbols-alist '(("lambda" . 955)))
-  (add-hook 'prog-mode #'prettify-symbols-mode)
+  (add-hook 'prog-mode-hook #'prettify-symbols-mode)
   :config
   (global-prettify-symbols-mode))
 
 (use-package browse-url
+  :ensure f
   :defer t
   :init
   (setq browse-url-browser-function 'browse-url-generic
@@ -64,33 +72,53 @@
 
 ;;;; ** WINDOWS / LAYOUTS
 (winner-mode t)
+(windmove-default-keybindings 'meta)
 
 (use-package ace-window
   :defer t
   :bind
-  ("M-o" . ace-window))
+  (("M-o"   . ace-window)
+   ("C-c o" . ace-window)))
+;; => window resizing with vim-like keybindings.
 
-(defvar win-horiz-resize-num 15
-  "The amount of delta columns to shrink and/or enlarge a window horizontally")
-(defvar win-vert-resize-num 5
-  "The amount of delta columns to shrink and/or enlarge a window vertically")
+;;    ((super + [left/up/down/...) bound in ~/.exwm-x to not accientally override
+;;     or more likely just plain overlap other possible window manager's
+;;     and their probable super-centric bindings. (tiling wms, cwm, etc.))
 
-(defun my-shrink-win-horiz ()
-  "Shrink window horizontally by `win-horiz-resize-num'"
-  (interactive)
-  (shrink-window-horizontally win-horiz-resize-num))
-(defun my-enlarge-win-horiz ()
-  "Enlarge window horizontally by `win-horiz-resize-num'"
-  (interactive)
-  (enlarge-window-horizontally win-horiz-resize-num))
-(defun my-shrink-win-vert ()
-  "Shrink window vertically by `win-vert-resize-num'"
-  (interactive)
-  (shrink-window win-vert-resize-num))
-(defun my-enlarge-win-vert ()
-  "Enlarge window vertically by `win-vert-resize-num'"
-  (interactive)
-  (enlarge-window win-vert-resize-num))
+(defvar win-resize-step nil
+  "The minimum amount of delta columns to shrink and/or enlarge a window.")
+
+(defvar dynamic-window-resizing-step nil
+  "Whether to use frame size as an indicator using dimensions to multiply
+WIN-RESIZE-STEP. For example, this  allows `enlarge-window-horizontally' to be
+resized more than `enlarge-window' (vertical window resizing)  when the
+FRAME-WIDTH is larger than FRAME-HEIGHT.")
+
+(defvar dynamic-window-resizing-positional nil
+  "Resize or shrink windows dynamically depending on the window's location.")
+
+
+(setq win-resize-step              3
+      dynamic-window-resizing-step t)
+
+;; stale hack i put together to get the numbers for resizing differently when
+;; frame is wider or taller
+
+(defun win-resize-step-h ()
+  "The amount of delta columns to shrink and/or enlarge a window horizontally"
+  (if (bound-and-true-p dynamic-window-resizing-step)
+      (if (> (frame-width) (frame-height))
+          (* (/ (frame-width) (frame-height)) win-resize-step)
+        win-resize-step)
+    win-resize-step))
+
+(defun win-resize-step-v ()
+  "The amount of delta columns to shrink and/or enlarge a window vertically."
+  (if (bound-and-true-p dynamic-window-resizing-step)
+      (if (> (frame-height) (frame-width))
+          (* (/ (frame-height) (frame-width)) win-resize-step)
+        win-resize-step)
+    win-resize-step))
 
 (defun my-split-win-vert ()
   "Splits window vertically and then focuses on it."
@@ -103,12 +131,94 @@
   (split-window-horizontally)
   (other-window 1))
 
-(global-set-key (kbd "C-x 2") #'my-split-win-vert)
-(global-set-key (kbd "C-x 3") #'my-split-win-horiz)
-(global-set-key (kbd "C-c h") #'my-shrink-win-vert)
-(global-set-key (kbd "C-c j") #'my-shrink-win-horiz)
-(global-set-key (kbd "C-c k") #'my-enlarge-win-horiz)
-(global-set-key (kbd "C-c l") #'my-enlarge-win-vert)
+;; dynamic window resizing depending on position
+;; source: https://www.emacswiki.org/emacs/WindowResize
+
+(defun win-resize-top-or-bot ()
+  "Figure out if the current window is on top, bottom or in the middle"
+  (let* ((win-edges (window-edges))
+         (this-window-y-min (nth 1 win-edges))
+         (this-window-y-max (nth 3 win-edges))
+         (fr-height (frame-height)))
+    (cond
+     ((eq 0 this-window-y-min)               "t")
+     ((eq (- fr-height 1) this-window-y-max) "b")
+     (t                                      "m"))))
+
+(defun win-resize-left-or-right ()
+  "Figure out if the current window is to the left, right or in the middle"
+  (let* ((win-edges (window-edges))
+         (this-window-x-min (nth 0 win-edges))
+         (this-window-x-max (nth 2 win-edges))
+         (fr-width (frame-width)))
+    (cond
+     ((eq 0 this-window-x-min)              "l")
+     ((eq (+ fr-width 4) this-window-x-max) "r")
+     (t                                     "m"))))
+
+(defun my-shrink-win-horiz ()
+  "Shrink window horizontally by WIN-RESIZE-STEP-H"
+  (interactive)
+  (if (bound-and-true-p dynamic-window-resizing-positional)
+      (cond
+        ((equal "t" (win-resize-top-or-bot))
+         (shrink-window-horizontally (win-resize-step-h)))
+        ((equal "b" (win-resize-top-or-bot))
+         (enlarge-window-horizontally (win-resize-step-h)))
+        ((equal "m" (win-resize-top-or-bot))
+         (shrink-window-horizontally (win-resize-step-h)))
+        (t (message "nil")))
+    (shrink-window-horizontally (win-resize-step-h))))
+
+(defun my-enlarge-win-horiz ()
+  "Enlarge window horizontallyy by WIN-RESIZE-STEP-H"
+  (interactive)
+  (if (bound-and-true-p dynamic-window-resizing-positional)
+    (cond
+      ((equal "t" (win-resize-top-or-bot))
+       (enlarge-window-horizontally (win-resize-step-h)))
+      ((equal "b" (win-resize-top-or-bot))
+       (shrink-window-horizontally (win-resize-step-h)))
+      ((equal "m" (win-resize-top-or-bot))
+       (enlarge-window-horizontally (win-resize-step-h)))
+      (t (message "nil")))
+    (enlarge-window-horizontally (win-resize-step-h))))
+
+(defun my-shrink-win-vert ()
+  "Shrink window vertically by WIN-RESIZE-STEP-V"
+  (interactive)
+  (if (bound-and-true-p dynamic-window-resizing-positional)
+    (cond
+      ((equal "l" (win-resize-left-or-right))
+       (shrink-window (win-resize-step-v)))
+      ((equal "r" (win-resize-left-or-right))
+       (enlarge-window (win-resize-step-v)))
+      ((equal "m" (win-resize-left-or-right))
+       (shrink-window (win-resize-step-v)))
+      (t (message "nil")))
+   (shrink-window (win-resize-step-v))))
+
+(defun my-enlarge-win-vert ()
+  "Enlarge window vertically by WIN-RESIZE-STEP-V"
+  (interactive)
+  (if (bound-and-true-p dynamic-window-resizing-positional)
+    (cond
+      ((equal "l" (win-resize-left-or-right))
+       (enlarge-window (win-resize-step-v)))
+      ((equal "r" (win-resize-left-or-right))
+       (shrink-window (win-resize-step-v)))
+      ((equal "m" (win-resize-left-or-right))
+       (enlarge-window (win-resize-step-v)))
+      (t (message "nil")))
+    (enlarge-window (win-resize-step-v))))
+
+(global-set-key (kbd "C-x 2")       #'my-split-win-vert)
+(global-set-key (kbd "C-x 3")       #'my-split-win-horiz)
+
+(global-set-key (kbd "M-S-<up>")    #'my-shrink-win-vert)
+(global-set-key (kbd "M-S-<down>")  #'my-enlarge-win-vert)
+(global-set-key (kbd "M-S-<left>")  #'my-shrink-win-horiz)
+(global-set-key (kbd "M-S-<right>") #'my-enlarge-win-horiz)
 
 ;;;; ** HELM **
 (use-package helm
@@ -127,6 +237,7 @@
    ("C-c C-m" . helm-M-x)
    ("C-x C-f" . helm-find-files)))
 
+;; changed default ``helm-google-actions'' to prefer eww first.
 (use-package helm-google
   :defer t
   :config
@@ -134,9 +245,9 @@
         helm-google-actions
         '(("Browse URL with EWW"             . (lambda (candidate)
                                                  (eww-browse-url candidate)))
+          ("Browse URL with default program" . browse-url)
           ("Copy URL to clipboard"           . (lambda (candidate)
-                                                 (kill-new       candidate)))
-          ("Browse URL with default program" . browse-url)))
+                                                 (kill-new candidate)))))
   :bind
   ("C-h C--" . helm-google))
 
@@ -234,8 +345,8 @@ Depending on whether or not a region is selected."
   "List of programming hooks to apply whitespace-mode and thus column character limit to.")
 
 (use-package whitespace
-  :ensure nil
-  :defer t
+  :ensure f
+  :demand t
   :config
   (setq whitespace-line-column column-char-limit
         whitespace-style '(face lines-tail))
@@ -261,31 +372,38 @@ This functions should be added to the hooks of major modes for programming."
 (dolist (mode-str font-annotated-modes)
   (add-hook mode-str #'font-lock-comment-annotations))
 
-;;;; ** MODELINE **
-(use-package anzu
-  :defer t
-  :config
-  (global-anzu-mode t))
+;;;; ** USER THEMES **
+(setq custom-safe-themes t)
+;; (use-package all-the-icons)
 
+;;;; ** DIMINISHING MODES **
 ;; mostly meaningless due to spaceline, but some of these are still needed
-;; and most are kept just in case
+;; and most are kept just in case. you know: if i ever get to crap out a fully
+;; artisanal powerline-ish modeline of my own from scratch. and these
+;; abbreviations are still found on ibuffer for example.
+;; same stands for the commented out diminishes (most likely i would delegate
+;; it to use-package's parameters).
 (use-package cyphejor
   :defer t
-  :init
+  :config
   (setq cyphejor-rules
         '(:downcase
           ("exwm"            "ⅇ𝕩")
-          ("apropos"         "???")
+          ("apropos"         "α*")
           ("bookmark"        "→")
           ("messages"        "msg")
           ("buffer"          "")
-          ("help"            "???")
+          ("fundamental"     "")
+          ("special"         "")
+          ("hmm"             "")
+          ("help"            "?")
           ("ibuffer"         "β")
-          ("compilation"     "!!!")
+          ("compilation"     "!")
           ("compiling"       "...")
           ("custom"          "custom")
           ("diff"            "diff")
           ("dired"           "dir")
+          ("debug"           "!")
           ("helm"            "")
           ("esup"            "GOTTA GO FAST")
           ("emacs"           "ⅇ")
@@ -294,9 +412,12 @@ This functions should be added to the hooks of major modes for programming."
           ("interactive"     "𝕚" :prefix)
           ("emacs-lisp"      "ⅇλ")
           ("suggest"         "Σⅇλ")
+          ;; ("lisp"            "λ")
+          ;; ("scheme"          "λ")
           ("lisp"            "λ")
-          ("scheme"          "λ")
+          ("scheme"          "Σ")
           ("clojure"         "𝕔λⅉ")
+          ;; ("clojure"         "cλj")
           ("geiser"          "γ")
           ("SML"             "sml")
           ("tuareg"          "ocaml")
@@ -307,86 +428,51 @@ This functions should be added to the hooks of major modes for programming."
           ("mode"            "")
           ("package"         "↓")
           ("paradox"         "↓")
-          ("nov"             "epub")
-          ("docview"         "pdf")
+          ("nov"             "（´ω ` * ）")
+          ("docview"         "（　´_ゝ`）")
+          ("mingus"          "μpd")
           ("eshell"          "ⅇ/>_")
           ("term"            "†/>_")
           ("text"            "txt")
           ("org"             "ø")
           ("wdired"          "↯/dir"))))
 
-;; (defmacro diminish-single (file mode &optional replacement)
-;;   "Diminish a single MODE with optional REPLACEMENT name"
-;;   `(with-eval-after-load ,(symbol-name file)
-;;      (diminish (quote ,mode) ,replacement)))
+(defmacro diminish-single (file mode &optional replacement)
+  "Diminish a single MODE with optional REPLACEMENT name"
+  `(with-eval-after-load ,(symbol-name file)
+     (diminish (quote ,mode) ,replacement)))
 
-;; (use-package diminish
-;;   :init
-;;   (progn
-;;     (diminish-single company company-mode)
-;;     (diminish-single flycheck flycheck-mode)
-;;     (diminish-single geiser geiser-autodoc-mode)
-;;     (diminish-single helm-mode helm-mode)
-;;     (diminish-single slime slime-autodoc-mode)
-;;     (diminish-single yasnippet yas-minor-mode)
-;;     (diminish-single eldoc eldoc-mode)
-;;     (diminish-single undo-tree undo-tree-mode)
-;;     (diminish-single view view-mode)
-;;     (diminish-single which-key which-key-mode)
-;;     (diminish-single whitespace whitespace-mode)
-;;     (diminish-single clj-refactor clj-refactor-mode)
-;;     (diminish-single simple visual-line-mode)
-
-;;     (diminish-single abbrev abbrev-mode " α ")
-;;     (diminish-single parinfer parinfer-mode " π ")
-;;     (diminish-single slime slime-mode " Σ ")
-;;     (diminish-single geiser geiser-mode " γ ")
-;;     (diminish 'isearch-mode " ⅈ ")))
-
-(use-package powerline
-  :init
-  (setq powerline-text-scale-factor 1.05))
-
-(use-package spaceline)
-(use-package spaceline-all-the-icons
-  :after
-  spaceline
-  :defer t
+(use-package diminish
+  :demand t
   :config
-  (with-no-warnings
-    (progn
-      (spaceline-all-the-icons--setup-package-updates)
-      (spaceline-all-the-icons--setup-paradox)
-      (spaceline-all-the-icons--setup-neotree)
-      (spaceline-all-the-icons--setup-anzu)
-      (spaceline-toggle-all-the-icons-bookmark-on)
-      (setq spaceline-all-the-icons-separator-type               'cup
-            spaceline-all-the-icons-primary-separator            ")"
-            spaceline-all-the-icons-secondary-separator          ")"
-            spaceline-all-the-icons-window-number-always-visible t)
-      (spaceline-all-the-icons-theme)))
-  :custom-face
-  (spaceline-highlight-face
-   ((t (:background "#2257a0" :foreground "#bbc2cf"))))
-  (powerline-active1
-   ((t (:background "#202328" :foreground "#73797e"))))
-  (powerline-active2
-   ((t (:background "#202328" :foreground "#5b6268"))))
-  (mode-line
-   ((t (:background "#1b2229" :foreground "#5b6268"))))
-  (powerline-inactive1
-   ((t (:background "#23272e" :foreground "#5b6268"))))
-  (powerline-inactive2
-   ((t (:background "#23272e" :foreground "#5b6268"))))
-  (mode-line-inactive
-   ((t (:background "#23272e" :foreground "#5b6268")))))
+  (progn
+    (diminish-single company company-mode)
+    (diminish-single flycheck flycheck-mode)
+    (diminish-single geiser geiser-autodoc-mode)
+    (diminish-single helm-mode helm-mode)
+    (diminish-single slime slime-autodoc-mode)
+    (diminish-single yasnippet yas-minor-mode)
+    (diminish-single undo-tree undo-tree-mode)
+    (diminish-single view view-mode)
+    (diminish-single which-key which-key-mode)
+    (diminish-single whitespace whitespace-mode)
+    (diminish-single clj-refactor clj-refactor-mode)
+    (diminish-single simple visual-line-mode)
 
+    (diminish-single eldoc eldoc-mode "ⅇδ")
+    (diminish-single abbrev abbrev-mode "α")
+    (diminish-single parinfer parinfer-mode "π")
+    (diminish-single slime slime-mode "Σ")
+    (diminish-single geiser geiser-mode "γ")
+    (diminish 'isearch-mode "ⅈ")
+    (diminish 'geiser-mode  "γ")))
+
+;;;; ** AFTER-INIT **
 (defun after-init-functions ()
   "Modes and functions to run after `after-init-hook'"
-  (load-theme        'doom-one t)
-  (cyphejor-mode     t)
-  (spaceline-all-the-icons-theme)
-  (blink-cursor-mode nil)
+  (load-theme            'doom-one t)
+  (cyphejor-mode         1)
+  (blink-cursor-mode     0)
   (set-face-attribute 'vertical-border nil :foreground "#23272e"))
 
 (add-hook 'after-init-hook #'after-init-functions)

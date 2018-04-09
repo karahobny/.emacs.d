@@ -1,10 +1,10 @@
 ;;; -*- lexical-binding: t; -*-
 ;;; init.el --- Unitialization file and gc-related config
+
 ;;; Commentary:
 ;;;            Initializes the separated configuration files from user-defined
-;;;            configuration-folder.  Might considering switching to use-package
-;;;            but migration takes a while and I didn't see any boost to my
-;;;            startup time even though I deferred like crazy.
+;;;            configuration-folder.  Some garbage-collecting tricks to speedup
+;;;            startup hopefully
 
 ;;; Code:
 ;; (package-initialize)
@@ -28,11 +28,9 @@ Default is set to initialize the files separately (nil).")
 (defconst user-config-files
   '(init-system
     init-multimedia
-    init-aliases
-    init-lispy
-    init-ml
     init-prog
     init-gui
+    init-modeline
     init-fira-code-ligatures)
   "List of the user's configuration files to initialize.
 Checked only if load-all-files-from-config-folder set to nil")
@@ -40,19 +38,30 @@ Checked only if load-all-files-from-config-folder set to nil")
 (defconst compile-user-config-folder t
   "Check if user-config-folder has files to be byte-compiled.")
 
+;; REFACTOR:
+;;           ** dolist vs. cl-loop vs. mapc benchmarking. **
+;;           wildly different results due to alignment of the stars or
+;;           something as inexplicable. `dolist' and `cl-loop' seem
+;;           to be the definite top contenders (also tried with dash.el's
+;;           `-map'-function, but it seemed even more costly than `mapc'.
+
+;;           saved the cl-loop-codesnippet for posterity's sake:
+;;           (cl-loop for file
+;;                    in user-config-files
+;;                    collect (require file))
+
 (defun initialize-user-config-files ()
   "The money shot. Initializes either user's defined `user-config-files' in that
 order, or indiscriminately every .el/.elc file from `user-config-folder'."
   (if (null load-all-files-from-config-folder)
-      (cl-loop for file
-               in user-config-files
-               collect (require file))
+      (dolist (file user-config-files)
+        (require file))
     (dolist (file (directory-files user-config-folder t ".\\.elc?$"))
       (load-library file))))
 
 ;;;; ** GARBAGE COLLECTION **
-;; inspired by hlissner's doom-emacs speedup tricks
-(defconst gc-threshold-max most-positive-fixnum
+;; hlissner's doom-emacs gc speedup trix
+(defconst gc-threshold-max 402653184
   "Maximum threshold for garbage collection.")
 (defconst gc-threshold-min 16777216
   "Minimum threshold for garbage collection.")
@@ -84,14 +93,16 @@ order, or indiscriminately every .el/.elc file from `user-config-folder'."
 ;;;; ** INITIALIZATION **
 (progn
   (gc-eval-max-threshold)
-  (add-to-list 'load-path user-config-folder)
-  (when (bound-and-true-p compile-user-config-folder)
-    (byte-recompile-directory (expand-file-name user-config-folder) 0))
   (setq inhibit-startup-screen  t
         file-name-handler-alist nil
         load-prefer-newer       t
         custom-file             user-custom-file)
   (load custom-file 'no-error 'no-message)
+
+  (when (bound-and-true-p compile-user-config-folder)
+    (byte-recompile-directory (expand-file-name user-config-folder) 0))
+
+  (add-to-list 'load-path user-config-folder)
   (initialize-user-config-files))
 
 (run-with-idle-timer 5 nil       #'gc-eval-at-startup)

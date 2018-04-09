@@ -2,11 +2,13 @@
 ;;; init-multimedia.el --- Media, music, documents etc.
 
 ;;; Commentary:
-;;;            How should I go on about dividing and
-;;;            conjoining my initial initialization-files.
+;;;            epub-viewing with nov.el. Music through mpd to mingus.el. Some
+;;;            messaging-related configuration. Pretty much everything that could
+;;;            be called something else than coding; or pertaining to emacs'
+;;;            behavior or its user interface.
 
 ;;; Code:
-;;;; DOCUMENTS
+;;;; ** DOCUMENTS **
 (use-package nov
   :defer t
   :mode ("\\.epub\\'" . nov-mode)
@@ -25,8 +27,7 @@
   :config
   (setq markdown-asymmetric-header t))
 
-
-;;;; MUSIC
+;;;; ** MUSIC **
 (defadvice mingus (after organize ())
   "Refresh and goto current song after entering mingus."
   (mingus-refresh)
@@ -38,11 +39,27 @@
   :config
   (require 'mingus-stays-home))
 
-;;;; EMAIL
+;;;; ** MESSAGING **
 (use-package all-the-icons-gnus
   :defer t
   :config
       (all-the-icons-gnus-setup))
+
+(use-package twittering-mode
+  :ensure f
+  :defer t
+  :commands twit
+  :config
+  (setq twittering-icon-mode         nil
+        twittering-use-icon-storage  nil
+        ;; twittering-icon-storage-file (concat user-emacs-directory
+        ;;                                      ".twittering-mode-icons.gz")
+        twittering-timer-interval    (* 60 2)
+        twittering-status-format
+        "%FACE[font-lock-constant-face]{%S}, %RT{%FACE[shadow]{retweeted by} %FACE[font-lock-constant-face]{%S} }%FACE[font-lock-doc-face]{%@} %FACE[shadow]{%p%r}\n%T\n"
+        twittering-connection-type-order
+          '(wget curl urllib-http native urllib-https)))
+
 
 (provide 'init-multimedia)
 ;;; init-multimedia.el ends here
