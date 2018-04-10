@@ -65,7 +65,16 @@
                             racket-mode-hook))
               (add-hook hook #'parinfer-mode))))
 
+;;;; *** YASNIPPETS ***
 
+;; TODO: look into this, it seems popular and probably for a reason.
+;;       only really used as a requirement for ``clj-refractor-mode'' iirc atm.
+
+(use-package yasnippet
+  :defer t
+  :init  (progn
+           (with-no-warnings
+             (add-hook 'clojure-mode-hook #'yas-minor-mode))))
 
 ;;;; *** EMACS LISP ***
 (defalias 'eb  #'eval-buffer)
@@ -173,16 +182,16 @@ Then proceed with `cider-connect' to connect into it with
             (add-hook 'clojure-mode-hook #'clj-refactor-mode)))
 
 ;;;; *** HASKELL ***
-
 (use-package haskell-mode
   :mode ("\\.hs\\'" . haskell-mode))
 
 (use-package dante
   :after    haskell-mode
+  :diminish (dante-mode . "dmc")
   :commands dante-mode
   :init     (progn
-              (add-hook 'haskell-mode-hook 'dante-mode)
-              (add-hook 'haskell-mode-hook 'flycheck-mode)))
+              (add-hook 'haskell-mode-hook #'dante-mode)
+              (add-hook 'haskell-mode-hook #'flycheck-mode)))
 
 ;;;; *** STANDARD ML ***
 (use-package sml-mode
@@ -193,23 +202,33 @@ Then proceed with `cider-connect' to connect into it with
                   sml-default-arg "-P full")))
 
 ;;;; *** OCAML ***
+;; not sure if i even need utop or merlin atleast atm
+;; but it doesn't look like it's hurting my caml'ing.
+(use-package merlin :ensure f :demand t)
+(use-package utop   :ensure f :demand t)
 (use-package tuareg
   :defer  t
-  :mode   ("\\.ml[ily]?$" . tuareg-mode)
+  :mode   (("\\.ml[ily]?$" . tuareg-mode) ("\\.topml$" . tuareg-mode))
+  :bind   (:map tuareg-mode-map
+                ("M-;"   . tuareg-comment-dwim)
+                ("C-c b" . tuareg-insert-begin-form)
+                ("C-c c" . tuareg-insert-class-form)
+                ("C-c f" . tuareg-insert-for-form)
+                ("C-c i" . tuareg-insert-if-form)
+                ("C-c l" . tuareg-insert-let-form)
+                ("C-c m" . tuareg-insert-match-form)
+                ("C-c t" . tuareg-insert-try-form)
+                ("C-c w" . tuareg-insert-while-form))
   :config (progn
             (setq tuareg-indent-align-with-first-arg t
-                  tuareg-match-patterns-aligned t)))
-
-;;;; *** YASNIPPETS ***
-
-;; TODO: look into this, it seems popular and probably for a reason.
-;;       only really used as a requirement for ``clj-refractor-mode'' iirc atm.
-
-(use-package yasnippet
-  :defer t
-  :init (progn
-          (with-no-warnings
-            (add-hook 'clojure-mode-hook #'yas-minor-mode))))
+                  tuareg-match-patterns-aligned      t
+                  tuareg-interactive-program         "utop"
+                  utop-command                       "utop -emacs"
+                  merlin-command                     'opam))
+  :init   (progn
+            (add-hook 'tuareg-mode-hook #'tuareg-imenu-set-imenu)
+            (add-hook 'tuareg-mode-hook #'utop-setup-ocaml-buffer)
+            (add-hook 'tuareg-mode-hook #'merlin-mode)))
 
 (provide 'init-prog)
 ;;; init-prog.el ends here

@@ -49,10 +49,11 @@
 
 (use-package indent-guide
   :demand      t
+  :diminish    indent-guide-mode
   :config      (progn
                  (setq indent-guide-char "¦")
                  (indent-guide-global-mode))
-  :custom-face (indent-guide-face ((t :foreground "dimgray"))))
+  :custom-face (indent-guide-face ((t :foreground "dimgray" :background "default"))))
 
 ;; prog-mode initialized just for ``prettify-symbols-mode''
 (use-package prog-mode
@@ -73,7 +74,12 @@
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
 
 ;;;; ** WINDOWS / LAYOUTS
-(winner-mode t)
+(use-package winner
+  :demand t
+  :config (winner-mode 1)
+  :bind   (("M-N" . winner-redo)
+           ("M-P" . winner-undo)))
+
 (windmove-default-keybindings 'meta)
 
 (use-package ace-window
@@ -94,8 +100,8 @@ WIN-RESIZE-STEP. For example, this  allows `enlarge-window-horizontally' to be
 resized more than `enlarge-window' (vertical window resizing)  when the
 FRAME-WIDTH is larger than FRAME-HEIGHT.")
 
-(setq win-resize-step                    3
-      dynamic-window-resizing-step       t)
+(setq win-resize-step              3
+      dynamic-window-resizing-step t)
 
 ;; stale hack i put together to get the numbers for resizing differently when
 ;; frame is wider or taller
@@ -158,11 +164,13 @@ FRAME-WIDTH is larger than FRAME-HEIGHT.")
 ;;;; ** HELM **
 (use-package helm
   :defer  t
-  :init   (progn (use-package helm-config :ensure f)
-                 (global-unset-key (kbd "M-x"))
-                 (setq helm-split-window-inside-p        t
-                       helm-move-to-line-cycle-in-source t
-                       helm-echo-input-in-header-line    t))
+  :init   (progn
+            (use-package helm-config
+              :ensure f)
+            ;; (global-unset-key (kbd "M-x"))
+            (setq helm-split-window-inside-p        t
+                  helm-move-to-line-cycle-in-source t
+                  helm-echo-input-in-header-line    t))
   :config (helm-mode)
   :bind   (("M-x"     . helm-M-x)
            ("C-x C-m" . helm-M-x)
@@ -213,6 +221,7 @@ FRAME-WIDTH is larger than FRAME-HEIGHT.")
   :bind  ("M-<mouse-1>" . mc/add-cursor-on-click))
 
 (use-package smooth-scrolling
+  :demand t
   :config (smooth-scrolling-mode t))
 
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -370,29 +379,30 @@ This functions should be added to the hooks of major modes for programming."
 (use-package diminish
   :demand t
   :config (progn
-            (diminish-single company company-mode)
-            (diminish-single flycheck flycheck-mode)
-            (diminish-single geiser geiser-autodoc-mode)
-            (diminish-single helm-mode helm-mode)
-            (diminish-single slime slime-autodoc-mode)
-            (diminish-single yasnippet yas-minor-mode)
-            (diminish-single undo-tree undo-tree-mode)
-            (diminish-single view view-mode)
-            (diminish-single which-key which-key-mode)
-            (diminish-single whitespace whitespace-mode)
-            (diminish-single clj-refactor clj-refactor-mode)
-            (diminish-single simple visual-line-mode)
-            (diminish-single indent-guide-mode indent-guide-mode)
+            (diminish-single company           company-mode)
+            (diminish-single flycheck          flycheck-mode)
+            (diminish-single geiser            geiser-autodoc-mode)
+            (diminish-single helm-mode         helm-mode)
+            (diminish-single slime             slime-autodoc-mode)
+            (diminish-single yasnippet         yas-minor-mode)
+            (diminish-single undo-tree         undo-tree-mode)
+            (diminish-single view              view-mode)
+            (diminish-single which-key         which-key-mode)
+            (diminish-single whitespace        whitespace-mode)
+            (diminish-single clj-refactor      clj-refactor-mode)
+            (diminish-single simple            visual-line-mode)
 
-            (diminish-single eldoc eldoc-mode "ⅇδ")
-            (diminish-single abbrev abbrev-mode "α")
+            (diminish-single eldoc    eldoc-mode    "ⅇδ")
+            (diminish-single abbrev   abbrev-mode   "α")
             (diminish-single parinfer parinfer-mode "π")
-            (diminish-single slime slime-mode "Σ")
-            (diminish-single geiser geiser-mode "γ")
+            (diminish-single slime    slime-mode    "Σ")
+            (diminish-single geiser   geiser-mode   "γ")
+            (diminish-single dante    dante-mode    "dante")
 
-            (diminish 'indent-guide-mode)
-            (diminish 'isearch-mode "ⅈ")
-            (diminish 'geiser-mode  "γ")))
+            (diminish 'geiser-autodoc-mode)
+            (diminish 'isearch-mode        "ⅈ")
+            (diminish 'geiser-mode         "γ")
+            (diminish 'dante-mode          "dante")))
 
 ;;;; ** AFTER-INIT **
 (defun after-init-functions ()
