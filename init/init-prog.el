@@ -176,7 +176,7 @@ Then proceed with `cider-connect' to connect into it with
 
 (use-package cider
   :defer  t
-  :after  (clojure-mode)
+  :after  clojure-mode
   :config (setq cider-lein-parameters
                 "repl :headless localhost :port 7800"
                 cider-repl-pop-to-buffer-on-connect 'display-only
@@ -189,7 +189,7 @@ Then proceed with `cider-connect' to connect into it with
 
 (use-package clj-refactor
   :defer    t
-  :after    cider-mode
+  :after    cider
   :diminish (clj-refactor-mode)
   :config   (progn
               (setq cljr-suppress-middleware-warnings t)
@@ -217,19 +217,6 @@ Then proceed with `cider-connect' to connect into it with
                   sml-default-arg  "-P full")))
 
 ;;;; *** OCAML ***
-(use-package utop
-  :ensure f
-  :demand t)
-
-(use-package merlin
-  :ensure   f
-  :demand   t
-  :diminish (merlin-mode . "mahou shoujo")
-  :config   (progn
-              (setq merlin-error-after-save nil)))
-
-
-
 (use-package tuareg
   :defer  t
   :mode   (("\\.ml[ily]?$" . tuareg-mode)
@@ -246,12 +233,28 @@ Then proceed with `cider-connect' to connect into it with
                 ("C-c w" . tuareg-insert-while-form))
   :config (progn
             (setq tuareg-indent-align-with-first-arg t
-                  tuareg-match-patterns-aligned      t
-                  tuareg-interactive-program         "utop"
-                  utop-command                       "utop -emacs"
-                  merlin-command                     'opam))
-  :init   (progn
-            (add-hook 'tuareg-mode-hook #'merlin-mode)))
+                  tuareg-match-patterns-aligned      t)))
+
+(use-package merlin
+  :after    tuareg
+  :diminish (merlin-mode . "mahou shoujo")
+  :bind     (:map merlin-mode-map
+                  ("M-."     . merlin-locate)
+                  ("M-,"     . merlin-pop-stack)
+                  ("C-c C-o" . merlin-occurrences)
+                  ("C-c C-j" . merlin-jump)
+                  ("C-c i"   . merlin-locate-ident))
+  :config   (progn
+              (setq merlin-error-after-save nil
+                    merlin-command          'opam))
+  :hook     (tuareg-mode . merlin-mode))
+
+(use-package utop
+  :after  tuareg
+  :config (progn
+            (setq utop-command "utop -emacs"))
+  :hook   (tuareg-mode . utop-minor-mode))
+
 
 (provide 'init-prog)
 ;;; init-prog.el ends here
