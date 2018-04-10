@@ -47,6 +47,13 @@
   (nlinum-relative-current-face
    ((t :inherit linum :foreground "#bbc2cf" :background "#23272e" :weight bold))))
 
+(use-package indent-guide
+  :demand      t
+  :config      (progn
+                 (setq indent-guide-char "¦")
+                 (indent-guide-global-mode))
+  :custom-face (indent-guide-face ((t :foreground "dimgray"))))
+
 ;; prog-mode initialized just for ``prettify-symbols-mode''
 (use-package prog-mode
   :ensure   f

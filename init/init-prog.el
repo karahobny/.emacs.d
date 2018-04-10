@@ -65,14 +65,7 @@
                             racket-mode-hook))
               (add-hook hook #'parinfer-mode))))
 
-;;;; *** INDENT GUIDES ***
-(use-package indent-guide
-  :demand t
-  :config (progn
-            (setq indent-guide-char "¦")
-            (set-face-foreground 'indent-guide-face "dimgray")
-            ;; (set-face-background 'indent-guide-face 'nil)
-            (indent-guide-global-mode)))
+
 
 ;;;; *** EMACS LISP ***
 (defalias 'eb  #'eval-buffer)

@@ -59,10 +59,15 @@ Otherwise defaults to Eshell-default welcoming you."
           (concat "Welcome to the Emacs shell "
                   user-login-name "\n"))))
 
+(defun eshell-mode-hook-functions ()
+  (company-mode -1))
+
 (use-package eshell
   :ensure f
   :defer  t
-  :config (add-hook 'eshell-banner-load-hook #'theo-eshell-banner)
+  :config (progn
+            (add-hook 'eshell-banner-load-hook #'theo-eshell-banner)
+            (add-hook 'eshell-mode-hook        #'eshell-mode-hook-functions))
   :bind   (("C-c §" . eshell)
            ("C-x §" . eshell))
   :hook   (eshelll-mode . eshell-bookmark-setup))
