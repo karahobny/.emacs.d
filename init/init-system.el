@@ -25,6 +25,11 @@
       use-package-always-ensure t
       use-package-verbose       t)
 
+;; if delight ever starts working with use-package keyword,
+;; i should jusst stick to that.
+(use-package delight  :demand t)
+(use-package diminish :demand t)
+
 (use-package paradox
   :defer    t
   :commands (paradox-upgrade-packages paradox-list-packages)
