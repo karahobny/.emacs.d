@@ -26,27 +26,24 @@
       use-package-verbose       t)
 
 (use-package paradox
-  :defer t
-  :commands
-  (paradox-upgrade-packages
-   paradox-list-packages)
-  :config
-  (with-no-warnings
-    (setq paradox-lines-per-entry        1
-          paradox-execute-asynchronously t
-          paradox-spinner-type           'progress-bar-filled)
-    (paradox-enable))
-  :bind
-  (("C-x C-u" . paradox-upgrade-packages)
-   ("C-x C-p" . paradox-list-packages)))
+  :defer    t
+  :commands (paradox-upgrade-packages paradox-list-packages)
+  :config   (progn
+              (with-no-warnings
+                (setq paradox-lines-per-entry        1
+                      paradox-execute-asynchronously t
+                      paradox-spinner-type           'progress-bar-filled)
+                (paradox-enable)))
+  :bind     (("C-x C-u" . paradox-upgrade-packages)
+             ("C-x C-p" . paradox-list-packages)))
 
 (use-package auto-compile
   :demand t
-  :config
-  (auto-compile-on-load-mode)
-  (auto-compile-on-save-mode)
-  (setq auto-compile-display-buffer   nil
-        auto-compile-update-autoloads t))
+  :config (progn
+            (auto-compile-on-load-mode)
+            (auto-compile-on-save-mode)
+            (setq auto-compile-display-buffer   nil
+                  auto-compile-update-autoloads t)))
 
 ;;;; ** ESHELL **
 (defvar eshell-banner-message nil
@@ -64,49 +61,44 @@ Otherwise defaults to Eshell-default welcoming you."
 
 (use-package eshell
   :ensure f
-  :defer t
-  :config
-  (add-hook 'eshell-banner-load-hook #'theo-eshell-banner)
-  :bind
-  (("C-c §" . eshell)
-   ("C-x §" . eshell))
-  :hook (eshelll-mode . eshell-bookmark-setup))
+  :defer  t
+  :config (add-hook 'eshell-banner-load-hook #'theo-eshell-banner)
+  :bind   (("C-c §" . eshell)
+           ("C-x §" . eshell))
+  :hook   (eshelll-mode . eshell-bookmark-setup))
 
 ;; plan9-style shell text manipulation
 (use-package em-smart
   :ensure f
-  :after eshell
-  :hook (eshell-mode . eshell-smart-initialize))
+  :after  eshell
+  :hook   (eshell-mode . eshell-smart-initialize))
 
 ;; TODO: fully customized luxury eshell-prompt.
 ;;       for now it's handled by this nifty little package.
 
 (use-package esh-opt
   :ensure f
-  :after eshell
-  :config
-  (autoload 'epe-theme-lambda "eshell-prompt-extras")
-  (with-no-warnings
-    (setq eshell-highlight-prompt nil
-          eshell-prompt-function  'epe-theme-lambda)))
+  :after  eshell
+  :config (progn
+            (autoload 'epe-theme-lambda "eshell-prompt-extras")
+            (with-no-warnings
+              (setq eshell-highlight-prompt nil
+                    eshell-prompt-function  'epe-theme-lambda))))
 
 ;;;; ** FILESYSTEM **
 ;; `dired-use-ls-dired' set to nil because openbsd, thats why.
 ;; might as well add an os-check for easier portability.
 (use-package dired
-  :ensure f
-  :defer t
-  :config
-  (add-hook 'dired-mode-hook #'all-the-icons-dired-mode)
-  :init
-  (setq dired-use-ls-dired nil))
+  :ensure   f
+  :defer    t
+  :commands dired-mode
+  :config   (setq dired-use-ls-dired nil)
+  :init     (add-hook 'dired-mode-hook #'all-the-icons-dired-mode))
 
 (use-package neotree
-  :defer t
-  :config
-  (setq neo-theme 'icons)
-  :bind
-  ("C-x C-n" . neotree-toggle))
+  :defer  t
+  :config (setq neo-theme 'icons)
+  :bind   ("C-x C-n" . neotree-toggle))
 
 ;;;; ** BACKUPS / AUTOSAVES **
 (setq backup-directory-alist        `(("." . "~/.emacs.d/backup"))
