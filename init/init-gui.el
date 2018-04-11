@@ -8,18 +8,18 @@
 ;;;            it's own.
 
 ;;; Code:
-;;;; ** BUFFERS **
-(global-visual-line-mode 1)
-(show-paren-mode         1)
+;;;; *** GENERAL UX ***
+(setq menu-bar-mode      nil
+      tool-bar-mode      nil
+      use-dialog-box     nil
+      blink-cursor-mode  nil
+      scroll-bar-mode    nil
+      fringe-mode        nil
+      confirm-kill-emacs 'y-or-n-p)
 
-(defalias 'list-buffers #'ibuffer)
-
-(global-set-key (kbd "C-<right>") #'next-buffer)
-(global-set-key (kbd "C-<left>")  #'previous-buffer)
-
-(global-set-key (kbd "<home>") #'beginning-of-line)
-(global-set-key (kbd "<end>")  #'end-of-line)
-(global-set-key (kbd "C-c g")  #'goto-line)
+(use-package tmm
+  :ensure f
+  :bind   ("C-c b" . tmm-menubar))
 
 (setq initial-scratch-message ";;
 ;;	 　　∧＿∧
@@ -32,28 +32,48 @@
 ;;
 \n")
 
-(use-package nlinum
-  :demand t
-  :init   (setq nlinum-format "%4d ")
-  :config (progn
-            (add-hook 'prog-mode-hook #'nlinum-mode)))
+(use-package which-key
+  :defer    50
+  :diminish which-key-mode
+  :init     (progn
+              (which-key-setup-side-window-right-bottom)
+              (which-key-mode)))
 
-(use-package nlinum-relative
-  :after nlinum
-  :bind  (("M-n"     . nlinum-relative-toggle)
-          ("C-c r"   . nlinum-relative-toggle)
-          ("C-c C-r" . nlinum-relative-toggle))
-  :custom-face
-  (nlinum-relative-current-face
-   ((t :inherit linum :foreground "#bbc2cf" :background "#23272e" :weight bold))))
+
+;;;; *** BUFFERS ***
+(defalias 'list-buffers #'ibuffer)
+(global-set-key (kbd "C-<right>") #'next-buffer)
+(global-set-key (kbd "C-<left>")  #'previous-buffer)
+
+(use-package nlinum
+  :config (progn
+            (setq nlinum-format "%4d ")
+            (use-package nlinum-relative
+              :bind        (("M-n"     . nlinum-relative-toggle)
+                            ("C-c r"   . nlinum-relative-toggle)
+                            ("C-c C-r" . nlinum-relative-toggle))
+              :custom-face (nlinum-relative-current-face
+                            ((t :inherit    linum     :weight     bold
+                                :foreground "#bbc2cf" :background "#23272e")))))
+  :hook   (prog-mode . nlinum-mode))
+
+(use-package paren
+  :ensure f
+  :config (progn
+            (setq show-paren-delay                   0
+                  show-paren-highlight-openparen     t
+                  show-paren-when-point-inside-paren t
+                  show-paren-when-point-in-periphery t))
+  :hook   (after-init . show-paren-mode))
 
 (use-package indent-guide
-  :demand      t
   :diminish    indent-guide-mode
   :config      (progn
                  (setq indent-guide-char "¦")
                  (indent-guide-global-mode))
-  :custom-face (indent-guide-face ((t :foreground "dimgray" :background "default"))))
+  :hook        ((prog-mode text-mode) . indent-guide-mode)
+  :custom-face (indent-guide-face
+                ((t :foreground "dimgray" :background "default"))))
 
 ;; prog-mode initialized just for ``prettify-symbols-mode''
 (use-package prog-mode
@@ -61,9 +81,19 @@
   :defer    t
   :commands (prettify-symbols-mode global-prettify-symbols-mode)
   :config   (progn
-              (setq prettify-symbols-alist '(("lambda" . 955)))
-              (add-hook 'prog-mode-hook #'prettify-symbols-mode)
-              (global-prettify-symbols-mode)))
+              (setq prettify-symbols-alist
+                    '(("lambda" . 955)))
+              (global-prettify-symbols-mode +1))
+  :hook     (prog-mode . prettify-symbols-mode))
+
+(use-package simple
+  :ensure    f
+  :diminish  visual-line-mode
+  :config    (progn
+               (setq delete-trailing-lines t))
+  :init      (global-visual-line-mode)
+  :bind      ("C-c g" . goto-line)
+  :hook      (before-save . delete-trailing-whitespace))
 
 (use-package browse-url
   :ensure f
@@ -71,21 +101,23 @@
   :init   (setq browse-url-browser-function 'browse-url-generic
                 browse-url-generic-program  "chrome"))
 
-(add-hook 'before-save-hook #'delete-trailing-whitespace)
 
-;;;; ** WINDOWS / LAYOUTS
+;;;; *** WINDOWS / LAYOUTS ***
 (use-package winner
-  :demand t
+  :defer  50
   :config (winner-mode 1)
   :bind   (("M-N" . winner-redo)
            ("M-P" . winner-undo)))
 
-(windmove-default-keybindings 'meta)
+(use-package windmove
+  :bind (("M-<up>"    . windmove-up)
+         ("M-<left>"  . windmove-left)
+         ("M-<down>"  . windmove-down)
+         ("M-<right>" . windmove-right)))
 
 (use-package ace-window
-  :defer t
-  :bind  (("M-o"   . ace-window)
-          ("C-c o" . ace-window)))
+  :bind (("M-o"   . ace-window)
+         ("C-c o" . ace-window)))
 
 ;;    ((super + [left/up/down/...) bound in ~/.exwm-x to not accientally override
 ;;     or more likely just plain overlap other possible window manager's
@@ -96,8 +128,8 @@
 
 (defvar dynamic-window-resizing-step nil
   "Whether to use frame size as an indicator using dimensions to multiply
-WIN-RESIZE-STEP. For example, this  allows `enlarge-window-horizontally' to be
-resized more than `enlarge-window' (vertical window resizing)  when the
+WIN-RESIZE-STEP. For example, this  allows #'enlarge-window-horizontally to be
+resized more per step than #'enlarge-window (vertical window resizing)  when the
 FRAME-WIDTH is larger than FRAME-HEIGHT.")
 
 (setq win-resize-step              3
@@ -133,100 +165,98 @@ FRAME-WIDTH is larger than FRAME-HEIGHT.")
   (split-window-horizontally)
   (other-window 1))
 
+(global-set-key (kbd "C-x 2") #'my-split-win-vert)
+(global-set-key (kbd "C-x 3") #'my-split-win-horiz)
+
 (defun my-shrink-win-horiz ()
   "Shrink window horizontally by WIN-RESIZE-STEP-H"
   (interactive)
   (shrink-window-horizontally (win-resize-step-h)))
-
 (defun my-enlarge-win-horiz ()
   "Enlarge window horizontallyy by WIN-RESIZE-STEP-H"
   (interactive)
   (enlarge-window-horizontally (win-resize-step-h)))
-
 (defun my-shrink-win-vert ()
   "Shrink window vertically by WIN-RESIZE-STEP-V"
   (interactive)
   (shrink-window (win-resize-step-v)))
-
 (defun my-enlarge-win-vert ()
   "Enlarge window vertically by WIN-RESIZE-STEP-V"
   (interactive)
   (enlarge-window (win-resize-step-v)))
-
-(global-set-key (kbd "C-x 2")       #'my-split-win-vert)
-(global-set-key (kbd "C-x 3")       #'my-split-win-horiz)
 
 (global-set-key (kbd "M-S-<up>")    #'my-shrink-win-vert)
 (global-set-key (kbd "M-S-<down>")  #'my-enlarge-win-vert)
 (global-set-key (kbd "M-S-<left>")  #'my-shrink-win-horiz)
 (global-set-key (kbd "M-S-<right>") #'my-enlarge-win-horiz)
 
-;;;; ** HELM **
-(use-package helm
-  :defer  t
-  :init   (progn
-            (use-package helm-config
-              :ensure f)
-            ;; (global-unset-key (kbd "M-x"))
-            (setq helm-split-window-inside-p        t
-                  helm-move-to-line-cycle-in-source t
-                  helm-echo-input-in-header-line    t))
-  :config (helm-mode)
-  :bind   (("M-x"     . helm-M-x)
-           ("C-x C-m" . helm-M-x)
-           ("C-c C-m" . helm-M-x)
-           ("C-x C-f" . helm-find-files)))
 
-;; changed default ``helm-google-actions'' to prefer eww first.
+;;;; *** HELM ***
+(use-package helm
+  :defer    t
+  :diminish helm-mode
+  :config   (progn
+              (use-package helm-config  :ensure f)
+              (setq helm-split-window-inside-p        t
+                    helm-move-to-line-cycle-in-source t
+                    helm-echo-input-in-header-line    t))
+  :init     (helm-mode)
+  :bind     (("M-x"     . helm-M-x)
+             ("C-x C-m" . helm-M-x)
+             ("C-c C-m" . helm-M-x)
+             ("C-x C-f" . helm-find-files)
+             ("C-c M-i" . helm-imenu)))
+
+;; changed default HELM-GOOGLE-ACTIONS to use eww by default.
 (use-package helm-google
   :defer  t
   :config (progn
             (setq helm-google-idle-delay 1
                   helm-google-actions
-                  '(("Browse URL with EWW"             . (lambda (candidate)
-                                                           (eww-browse-url candidate)))
+                  '(("Browse URL with EWW"
+                     . (lambda (candidate) (eww-browse-url candidate)))
                     ("Browse URL with default program" . browse-url)
-                    ("Copy URL to clipboard"           . (lambda (candidate)
-                                                           (kill-new candidate))))))
+                    ("Copy URL to clipboard"
+                     . (lambda (candidate) (kill-new candidate))))))
   :bind   ("C-h C--" . helm-google))
 
-;;;; ** USER INPUT **
-(use-package tmm
-  :defer t
-  :bind  ("C-c b" . tmm-menubar))
 
-(use-package which-key
-  :defer  t
-  :config (progn
-            (which-key-setup-side-window-right-bottom)
-            (which-key-mode)))
+;;;; *** USER INPUT ***
+(global-set-key (kbd "RET")    #'newline-and-indent)
+(global-set-key (kbd "<home>") #'beginning-of-line)
+(global-set-key (kbd "<end>")  #'end-of-line)
+
+;; control-tab to insert an actual tab-char
+(global-set-key (kbd "C-<tab>") "\C-q\t")
+
+;; yes-or-no-p -> y-or-no-p with return-key aliased to confirmation
+(fset 'yes-or-no-p 'y-or-n-p)
+(define-key query-replace-map [return] 'act)
+(define-key query-replace-map [?\C-m]  'act)
 
 (use-package undo-tree
-  :defer  t
-  :config (with-no-warnings
-            (global-undo-tree-mode))
-  :bind   (("C-z"   . undo-tree-undo)
-           ("C-r"   . undo-tree-redo)
-           ("C-Z"   . undo-tree-redo)
-           ("C-c v" . undo-tree-visualize)))
+  :defer     t
+  :diminish  undo-tree-mode
+  :functions global-undo-tree-mode
+  :config    (progn
+               (global-undo-tree-mode))
+  :bind      (("C-z"   . undo-tree-undo)
+              ("C-r"   . undo-tree-redo)
+              ("C-Z"   . undo-tree-redo)
+              ("C-c v" . undo-tree-visualize)))
+
+(use-package isearch
+  :ensure   f
+  :diminish (isearch-mode . "ⅈ"))
+
+(use-package centered-cursor-mode
+  :defer    t
+  :diminish (centered-cursor-mode . "-+-")
+  :bind     ("C-c -"   . centered-cursor-mode))
 
 (use-package comment-dwim-2
   :defer t
   :bind  ("M-;" . comment-dwim-2))
-
-(use-package multiple-cursors
-  :disabled
-  :defer t
-  :init  (global-unset-key (kbd "M-<down-mouse-1>"))
-  :bind  ("M-<mouse-1>" . mc/add-cursor-on-click))
-
-(use-package smooth-scrolling
-  :demand t
-  :config (smooth-scrolling-mode t))
-
-(fset 'yes-or-no-p 'y-or-n-p)
-(define-key query-replace-map [return] 'act)
-(define-key query-replace-map [?\C-m] 'act)
 
 (defun smart-line-beginning ()
   "Move point to the beginning of text on the current line; if that is already
@@ -237,6 +267,8 @@ the current position of point, then move it to the beginning of the line."
     (when (eq pt (point))
       (beginning-of-line))))
 
+(global-set-key (kbd "C-a") #'smart-line-beginning)
+
 (defun kill-region-or-word ()
   "Call `kill-region' or `backward-kill-word'.
 Depending on whether or not a region is selected."
@@ -244,6 +276,8 @@ Depending on whether or not a region is selected."
   (if (and transient-mark-mode mark-active)
       (kill-region (point) (mark))
     (backward-kill-word 1)))
+
+(global-set-key (kbd "C-w") #'kill-region-or-word)
 
 (defun eval-and-replace ()
   "Replace the preceding sexp with its value."
@@ -255,44 +289,32 @@ Depending on whether or not a region is selected."
     (error (message "Invalid expression")
            (insert (current-kill 0)))))
 
-(global-set-key (kbd "RET")     #'newline-and-indent)
-(global-set-key (kbd "C-a")     #'smart-line-beginning)
-(global-set-key (kbd "C-<tab>") "\C-q\t")
+(global-set-key (kbd "C-c e") #'eval-and-replace)
 
-(global-set-key (kbd "C-w")     #'kill-region-or-word)
-(global-set-key (kbd "C-c e")   #'eval-and-replace)
 
-;;;; ** HIGHLIGHTS **
+;;;; *** HIGHLIGHTS ***
 (defvar column-char-limit 82
   "Highlight characters going over the specified amount of columns/characters.")
 
-(defvar char-limited-modes
-  '(prog-mode-hook
-    emacs-lisp-mode-hook
-    lisp-mode-hook
-    common-lisp-mode-hook
-    scheme-mode-hook
-    clojure-mode-hook
-    text-mode-hook)
-  "List of programming hooks to apply whitespace-mode and thus column character limit to.")
-
 (use-package whitespace
-  :ensure f
-  :demand t
-  :config (progn
-            (setq whitespace-line-column column-char-limit
-                  whitespace-style '(face lines-tail))
-            (dolist (mode-str char-limited-modes)
-              (add-hook mode-str #'whitespace-mode))))
+  :ensure   f
+  :defer    t
+  :diminish whitespace-mode
+  :config   (progn
+              (setq whitespace-line-column column-char-limit
+                    whitespace-style       '(face lines-tail)))
+  ;; (dolist (mode-str char-limited-modes)
+  ;;   (add-hook mode-str #'whitespace-mode)))
+  :hook     ((prog-mode
+              emacs-lisp-mode
+              lisp-mode
+              common-lisp-mode
+              scheme-mode
+              clojure-mode
+              haskell-mode
+              tuareg-mode)
+             . whitespace-mode))
 
-(defvar font-annotated-modes
-  '(prog-mode-hook
-    emacs-lisp-mode-hook
-    lisp-mode-hook
-    common-lisp-mode-hook
-    scheme-mode-hook
-    clojure-mode-hook)
-  "List of programming hooks to apply `font-lock-comment-annotations' to.")
 
 (defun font-lock-comment-annotations ()
   "Highlight a bunch of well known comment annotations.
@@ -301,27 +323,42 @@ This functions should be added to the hooks of major modes for programming."
    nil '(("\\<\\(FIX\\(ME\\)?\\|TODO\\|OPTIMIZE\\|HACK\\|REFACTOR\\):"
           1 font-lock-warning-face t))))
 
+(defvar font-annotated-modes
+  '(prog-mode-hook
+    emacs-lisp-mode-hook
+    lisp-mode-hook
+    common-lisp-mode-hook
+    scheme-mode-hook
+    clojure-mode-hook
+    haskell-mode-hook
+    tuareg-mode-hook)
+  "List of programming hooks to apply #'font-lock-comment-annotations to.")
+
 (dolist (mode-str font-annotated-modes)
   (add-hook mode-str #'font-lock-comment-annotations))
 
-;;;; ** USER THEMES **
-(setq custom-safe-themes t)
-;; (use-package all-the-icons)
 
-;;;; ** DIMINISHING MODES **
-;; mostly meaningless due to spaceline, but some of these are still needed
-;; and most are kept just in case. you know: if i ever get to crap out a fully
-;; artisanal powerline-ish modeline of my own from scratch. and these
-;; abbreviations are still found on ibuffer for example.
-;; same stands for the commented out diminishes (most likely i would delegate
-;; it to use-package's parameters).
+;;;; *** USER THEMES ***
+(setq custom-safe-themes t)
+(use-package doom-themes
+  :ensure f
+  :demand t
+  :config (progn
+            (doom-themes-neotree-config)
+            (doom-themes-org-config)
+            (set-face-attribute 'vertical-border nil :foreground "#23272e"))
+  :init   (load-theme 'doom-one t))
+
+
+;;;; *** DIMINISHING MODES ***
 (use-package cyphejor
   :demand t
+  :hook   (after-init . cyphejor-mode)
   :config (progn
             (setq cyphejor-rules
                   '(:downcase
                     ("exwm"            "ⅇ𝕩")
-                    ("apropos"         "α*")
+                    ("apropos"         "apropos")
                     ("bookmark"        "→")
                     ("messages"        "msg")
                     ("buffer"          "")
@@ -354,9 +391,8 @@ This functions should be added to the hooks of major modes for programming."
                     ("racket"          "(λ)")
                     ("repl"            "")
                     ("SML"             "sml")
-                    ("tuareg"          "ocaml")
+                    ("tuareg"          "ℂαml")
                     ("haskell"         "〉λ꞊")
-                    ("erlang"          "erl")
                     ("sh"              "#!")
                     ("menu"            "")
                     ("mode"            "")
@@ -364,55 +400,11 @@ This functions should be added to the hooks of major modes for programming."
                     ("paradox"         "↓")
                     ("nov"             "（´ω ` * ）")
                     ("docview"         "（　´_ゝ`）")
-                    ("mingus"          "mpd")
                     ("eshell"          "ⅇ/>_")
                     ("term"            "†/>_")
                     ("text"            "txt")
                     ("org"             "ø")
                     ("wdired"          "↯/dir")))))
-
-(defmacro diminish-single (file mode &optional replacement)
-  "Diminish a single MODE with optional REPLACEMENT name"
-  `(with-eval-after-load ,(symbol-name file)
-     (diminish (quote ,mode) ,replacement)))
-
-(use-package diminish
-  :demand t
-  :config (progn
-            (diminish-single company           company-mode)
-            (diminish-single flycheck          flycheck-mode)
-            (diminish-single geiser            geiser-autodoc-mode)
-            (diminish-single helm-mode         helm-mode)
-            (diminish-single slime             slime-autodoc-mode)
-            (diminish-single yasnippet         yas-minor-mode)
-            (diminish-single undo-tree         undo-tree-mode)
-            (diminish-single view              view-mode)
-            (diminish-single which-key         which-key-mode)
-            (diminish-single whitespace        whitespace-mode)
-            (diminish-single clj-refactor      clj-refactor-mode)
-            (diminish-single simple            visual-line-mode)
-
-            (diminish-single eldoc    eldoc-mode    "ⅇδ")
-            (diminish-single abbrev   abbrev-mode   "α")
-            (diminish-single parinfer parinfer-mode "π")
-            (diminish-single slime    slime-mode    "Σ")
-            (diminish-single geiser   geiser-mode   "γ")
-            (diminish-single dante    dante-mode    "dante")
-
-            (diminish 'geiser-autodoc-mode)
-            (diminish 'isearch-mode        "ⅈ")
-            (diminish 'geiser-mode         "γ")
-            (diminish 'dante-mode          "dante")))
-
-;;;; ** AFTER-INIT **
-(defun after-init-functions ()
-  "Modes and functions to run after `after-init-hook'"
-  (load-theme            'doom-one t)
-  (cyphejor-mode         1)
-  (blink-cursor-mode     0)
-  (set-face-attribute    'vertical-border nil :foreground "#23272e"))
-
-(add-hook 'after-init-hook #'after-init-functions)
 
 (provide 'init-gui)
 ;;; init-gui.el ends here

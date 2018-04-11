@@ -4,11 +4,10 @@
 ;;; Commentary:
 ;;;            epub-viewing with nov.el. Music through mpd to mingus.el. Some
 ;;;            messaging-related configuration. Pretty much everything that could
-;;;            be called something else than coding; or pertaining to emacs'
-;;;            behavior or its user interface.
+;;;            be called procrastinating.
 
 ;;; Code:
-;;;; ** DOCUMENTS **
+;;;; *** DOCUMENTS ***
 (use-package nov
   :defer t
   :mode  ("\\.epub\\'" . nov-mode)
@@ -23,7 +22,8 @@
   :mode   ("\\.\\(md\\|markdown\\)\\'" . markdown-mode)
   :config (setq markdown-asymmetric-header t))
 
-;;;; ** MUSIC **
+
+;;;; *** MUSIC ***
 (defadvice mingus (after organize ())
   "Refresh and goto current song after entering mingus."
   (mingus-refresh)
@@ -34,25 +34,26 @@
   :defer  t
   :config (use-package mingus-stays-home :ensure f))
 
-;;;; ** MESSAGING **
+(use-package emms
+  :defer   t
+  :defines emms-source-file-default-directory
+  :bind    (("C-c M p" . emms-previous)
+            ("C-c M n" . emms-next)
+            ("C-c M s" . emms-show)
+            ("C-c M k" . emms-stop))
+  :config  (progn
+             (setq emms-source-file-default-directory "~/music/")
+             (use-package emms-setup   :ensure f)
+             (use-package emms-browser :ensure f))
+  :init    (progn
+             (emms-all)
+             (emms-default-players)))
+
+
+;;;; *** MESSAGING ***
 (use-package all-the-icons-gnus
   :defer t
   :config (all-the-icons-gnus-setup))
-
-(use-package twittering-mode
-  :ensure   f
-  :defer    t
-  :commands twit
-  :config   (progn
-              (setq twittering-icon-mode         nil
-                    twittering-use-icon-storage  nil
-                    ;; twittering-icon-storage-file (concat user-emacs-directory
-                    ;;                                      ".twittering-mode-icons.gz")
-                    twittering-timer-interval    (* 60 2)
-                    twittering-status-format
-                    "%FACE[font-lock-constant-face]{%S}, %RT{%FACE[shadow]{retweeted by} %FACE[font-lock-constant-face]{%S} }%FACE[font-lock-doc-face]{%@} %FACE[shadow]{%p%r}\n%T\n"
-                    twittering-connection-type-order
-                    '(wget curl urllib-http native urllib-https))))
 
 (provide 'init-multimedia)
 ;;; init-multimedia.el ends here

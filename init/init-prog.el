@@ -4,13 +4,12 @@
 ;;; Commentary:
 ;;;            Programming language-specific modes and their configuration.
 ;;;            Code (and pretty much everything else) is autocompleted with
-;;;            company.el and syntax checking through flycheck.el. Version
+;;;            company.el and syntax checking through flycheck.el.  Version
 ;;             controlling through magit.el of course.
 
 ;;; Code:
 ;;;; *** COMPANY ***
 (use-package company
-  :defer    t
   :diminish (company-mode)
   :bind     (:map company-active-map
                   ("<tab>" . company-complete)
@@ -18,17 +17,20 @@
                   ("C-n"   . company-select-next)
                   ("C-p"   . company-select-previous))
   :config   (progn
-              (setq company-minimum-prefix-length     3
+              (setq company-minimum-prefix-length     4
                     company-selection-wrap-around     t
                     company-show-numbers              nil
-                    company-idle-delay                0.3
+                    company-idle-delay                0
                     company-tooltip-limit             10
-                    company-tooltip-align-annotations t))
+                    company-tooltip-minimum-width     30
+                    company-tooltip-align-annotations t)
+              (add-to-list 'company-backends
+                           'merlin-company-backend))
   :hook     (after-init . global-company-mode))
+
 
 ;;;; *** FLYCHECK ***
 (use-package flycheck
-  :after    helm-flycheck
   :commands (flycheck-mode global-flycheck-mode)
   :diminish (flycheck-mode)
   :bind     (:map flycheck-mode-map
@@ -39,19 +41,24 @@
               (flycheck-checkbashisms-setup)
               (flycheck-haskell-setup))
   :config   (progn
-              (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
-  :hook     ((after-init   . global-flycheck-mode)
-             (haskell-mode . flycheck-mode)))
+              (use-package helm-flycheck :after helm)
+              (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
+              (global-flycheck-mode))
+  :hook     (after-init . global-flycheck-mode))
+
 
 ;;;; *** ELDOC ***
 (use-package eldoc
   :diminish (eldoc-mode . " ⅇδ ")
-  :hook     ((emacs-lisp-mode clojure-mode
-              ielm-mode lisp-interaction-mode) . eldoc-mode))
+  :hook     ((emacs-lisp-mode
+              clojure-mode
+              ielm-mode
+              lisp-interaction-mode)
+             . eldoc-mode))
+
 
 ;;;; *** VERSION CONTROL ***
 (use-package magit
-  :defer  t
   :config (progn
             (global-magit-file-mode))
   :bind   (("C-x g"   . magit-status)
@@ -61,29 +68,23 @@
            ("C-c c"   . magit-commit-popup)
            ("C-c p"   . magit-push-popup)))
 
+
 ;;;; *** PARINFER ***
 (use-package parinfer
-  :defer    t
   :diminish (parinfer-mode . " π ")
   :bind     (:map parinfer-mode-map
                   ("C-p" . parinfer-toggle-mode))
   :config   (progn
               (setq parinfer-extensions
                     '(defaults pretty-parens smart-yank paredit smart-tab)))
-  :hook     ((clojure-mode emacs-lisp-mode
-              common-lisp-mode scheme-mode
-              lisp-mode racket-mode) . parinfer-mode))
+  :hook     ((clojure-mode
+              emacs-lisp-mode
+              common-lisp-mode
+              scheme-mode
+              lisp-mode
+              racket-mode)
+             . parinfer-mode))
 
-;;;; *** YASNIPPETS ***
-
-;; TODO: look into this, it seems popular and probably for a reason.
-;;       only really used as a requirement for `clj-refractor-mode' atm.
-
-(use-package yasnippet
-  :defer t
-  :init  (progn
-           (with-no-warnings
-             (add-hook 'clojure-mode-hook #'yas-minor-mode))))
 
 ;;;; *** EMACS LISP ***
 (defalias 'eb  #'eval-buffer)
@@ -94,14 +95,13 @@
 (defalias 'eis #'elisp-index-search)
 
 (defun el-lexical-bind ()
-  "Sets `lexical-binding' on new elisp-files, disregarding *scratch*."
+  "Set `lexical-binding' on new elisp-files, disregarding *scratch*."
   (when (and (and (bobp) (eobp))
              (not (equal (buffer-name) "*scratch*")))
     (insert ";;; -*- lexical-binding: t; -*-\n")
     (setq lexical-binding t)))
 
 (add-hook 'emacs-lisp-mode-hook #'el-lexical-bind)
-(add-hook 'emacs-lisp-mode-hook #'eldoc-mode)
 
 (defun create-scratch-buffer ()
   "Create a scratch buffer."
@@ -110,17 +110,18 @@
   (insert initial-scratch-message)
   (lisp-interaction-mode))
 
+
 ;;;; *** COMMON LISP ***
 (use-package slime
   :defer    t
   :diminish (slime-mode . " Σ ")
   :config   (progn
-              (setq slime-lisp-implementations
-                    '((sbcl ("/usr/local/bin/sbcl")))
-                    slime-contribs '(slime-fancy))
+              (setq slime-lisp-implementations  '((sbcl ("/usr/local/bin/sbcl")))
+                    slime-contribs              '(slime-fancy))
               (use-package slime-company
                 :demand t
                 :init   (slime-setup '(slime-company)))))
+
 
 ;;;; *** SCHEME AND RACKET ***
 (use-package scheme-mode
@@ -128,29 +129,29 @@
   :mode   ("\\.\\(scm\\|ss\\)\\'" . scheme-mode))
 
 (use-package geiser
-  :defer    t
-  :diminish (geiser-mode . " γ ")
+  :defines  (geiser-active-implementations
+             geiser-default-implementation
+             geiser-mode-start-repl-p
+             geiser-debug-jump-to-debug-p
+             geiser-guile-load-init-file-p)
+  :diminish (geiser-mode . " γ ") (geiser-autodoc-mode . " δ ")
   :config   (progn
-              (with-no-warnings
-                (setq geiser-active-implementations '(guile)
-                      geiser-default-implementation 'guile
-                      geiser-mode-start-repl-p      t
-                      geiser-debug-jump-to-debug-p  nil
-                      geiser-guile-load-init-file-p t))))
+              (setq geiser-active-implementations '(guile)
+                    geiser-default-implementation 'guile
+                    geiser-mode-start-repl-p      t
+                    geiser-debug-jump-to-debug-p  nil
+                    geiser-guile-load-init-file-p t)))
 
 (use-package racket-mode
-  :defer    t
   :diminish (racket-mode . " (λ) ")
   :mode     ("\\.rkt[dl]?\\'" . racket-mode)
   :bind     (:map racket-mode-map
                   ("C-x a" . racket-align))
-  :config   (progn
-              (add-hook 'racket-mode-hook      #'racket-unicode-input-method-enable)
-              (add-hook 'racket-repl-mode-hook #'racket-unicode-input-method-enable)))
+  :hook     ((racket-mode racket-repl-mode) . racket-unicode-input-method-enable))
 
 ;;;; *** CLOJURE ***
 (defun cider-connect-to-localhost ()
-  "Connect with `cider-connect' to an already running REPL at localhost:7800"
+  "Connect with `cider-connect' to an already running REPL at localhost:7800."
   (interactive)
   (cider-connect "localhost" "7800"))
 
@@ -171,30 +172,30 @@ Then proceed with `cider-connect' to connect into it with
 (defalias 'ecc  #'establish-cider-connection)
 
 (use-package clojure-mode
-  :defer t
-  :mode  ("\\.\\(clj\\|boot\\|cljx\\|edn\\|cljs\\|cljs.hl\\)\\'" . clojure-mode))
+  :mode   ("\\.\\(clj\\|boot\\|cljx\\|edn\\|cljs\\|cljs.hl\\)\\'" . clojure-mode)
+  :config (progn
+            (use-package yasnippet
+              :diminish yas-minor-mode
+              :hook     (clojure-mode . yas-minor-mode))
+            (use-package clj-refactor
+              :functions cljr-add-keybindings-with-prefix
+              :diminish  clj-refactor-mode
+              :config    (progn
+                           (setq cljr-suppress-middleware-warnings t)
+                           (cljr-add-keybindings-with-prefix "C-c C-m"))
+              :hook      (clojure-mode . clj-refactor-mode))))
 
 (use-package cider
-  :defer  t
-  :after  clojure-mode
-  :config (setq cider-lein-parameters
-                "repl :headless localhost :port 7800"
-                cider-repl-pop-to-buffer-on-connect 'display-only
-                cider-repl-result-prefix ";; => "
-                cider-repl-display-help-banner nil)
-  :init   (progn
-            (with-no-warnings
-              (add-hook 'cider-repl-mode-hook
-                        #'cider-company-enable-fuzzy-completion))))
+  :functions cider-company-enable-fuzzy-completion
+  :after     clojure-mode
+  :config    (progn
+               (setq cider-lein-parameters
+                     "repl :headless localhost :port 7800"
+                     cider-repl-pop-to-buffer-on-connect 'display-only
+                     cider-repl-result-prefix ";; => "
+                     cider-repl-display-help-banner nil))
+  :hook      (cider-repl-mode . cider-company-enable-fuzzy-completion))
 
-(use-package clj-refactor
-  :defer    t
-  :after    cider
-  :diminish (clj-refactor-mode)
-  :config   (progn
-              (setq cljr-suppress-middleware-warnings t)
-              (cljr-add-keybindings-with-prefix "C-c C-m")
-              (add-hook 'clojure-mode-hook #'clj-refactor-mode)))
 
 ;;;; *** HASKELL ***
 (use-package haskell-mode
@@ -203,58 +204,59 @@ Then proceed with `cider-connect' to connect into it with
 (use-package dante
   :after    haskell-mode
   :diminish (dante-mode . "dmc")
-  :commands dante-mode
-  :init     (progn
-              (add-hook 'haskell-mode-hook #'dante-mode)))
+  :hook     (haskell-mode . dante-mode))
 
 
 ;;;; *** STANDARD ML ***
 (use-package sml-mode
   :defer  t
   :mode   ("\\.\\(sml\\|sig\\)\\'" . sml-mode)
-  :config (progn
-            (setq sml-program-name "mosml"
-                  sml-default-arg  "-P full")))
+  :config (setq sml-program-name "mosml"
+                  sml-default-arg  "-P full"))
+
 
 ;;;; *** OCAML ***
 (use-package tuareg
-  :defer  t
-  :mode   (("\\.ml[ily]?$" . tuareg-mode)
-           ("\\.topml$"    . tuareg-mode))
-  :bind   (:map tuareg-mode-map
-                ("M-;"   . tuareg-comment-dwim)
-                ("C-c b" . tuareg-insert-begin-form)
-                ("C-c c" . tuareg-insert-class-form)
-                ("C-c f" . tuareg-insert-for-form)
-                ("C-c i" . tuareg-insert-if-form)
-                ("C-c l" . tuareg-insert-let-form)
-                ("C-c m" . tuareg-insert-match-form)
-                ("C-c t" . tuareg-insert-try-form)
-                ("C-c w" . tuareg-insert-while-form))
-  :config (progn
-            (setq tuareg-indent-align-with-first-arg t
-                  tuareg-match-patterns-aligned      t)))
+  :defer       t
+  :mode        (("\\.ml[ily]?$" . tuareg-mode)
+                ("\\.topml$"    . tuareg-mode))
+  :bind        (:map tuareg-mode-map
+                     ("M-;"   . tuareg-comment-dwim)
+                     ("C-c B" . tuareg-insert-begin-form)
+                     ("C-c C" . tuareg-insert-class-form)
+                     ("C-c F" . tuareg-insert-for-form)
+                     ("C-c I" . tuareg-insert-if-form)
+                     ("C-c L" . tuareg-insert-let-form)
+                     ("C-c M" . tuareg-insert-match-form)
+                     ("C-c T" . tuareg-insert-try-form)
+                     ("C-c W" . tuareg-insert-while-form))
+  :config      (progn
+                 (setq tuareg-indent-align-with-first-arg            t
+                       tuareg-match-patterns-aligned                 t
+                       tuareg-use-abbrev-mode                        nil
+                       tuareg-interactive-scroll-to-bottom-on-output t)
+                 (use-package ocp-indent))
+  :custom-face (tuareg-font-double-colon-face ((t :foreground "dimgray"))))
 
 (use-package merlin
-  :after    tuareg
   :diminish (merlin-mode . "mahou shoujo")
   :bind     (:map merlin-mode-map
-                  ("M-."     . merlin-locate)
-                  ("M-,"     . merlin-pop-stack)
-                  ("C-c C-o" . merlin-occurrences)
-                  ("C-c C-j" . merlin-jump)
-                  ("C-c i"   . merlin-locate-ident))
-  :config   (progn
-              (setq merlin-error-after-save nil
-                    merlin-command          'opam))
+                  ("M-."        . merlin-locate)
+                  ("M-,"        . merlin-pop-stack)
+                  ("C-c C-o"    . merlin-occurrences)
+                  ("C-c C-j"    . merlin-jump)
+                  ("C-c C-i"    . merlin-locate-ident)
+                  ("C-c <up>"   . merlin-type-enclosing-go-up)
+                  ("C-c <down>" . merlin-type-enclosing-go-down))
+  :config   (setq merlin-error-after-save    nil
+                  merlin-command             'opam
+                  merlin-completion-with-doc t)
   :hook     (tuareg-mode . merlin-mode))
 
 (use-package utop
-  :after  tuareg
-  :config (progn
-            (setq utop-command "utop -emacs"))
-  :hook   (tuareg-mode . utop-minor-mode))
-
+  :diminish utop-minor-mode
+  :config   (setq utop-command "opam config exec -- utop -emacs")
+  :hook     (tuareg-mode . utop-minor-mode))
 
 (provide 'init-prog)
 ;;; init-prog.el ends here

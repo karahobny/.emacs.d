@@ -12,26 +12,24 @@
 ;;        required here separately??
 (require 'use-package)
 
-(defvar mode-line-left-side-items nil
-  "Items to display on the left-side of modeline.")
-(defvar mode-line-right-side-items nil
-  "Items to display on the right-side of modeline.")
-
-(use-package all-the-icons
-  :demand t)
+;; (defvar mode-line-left-side-items nil
+;;   "Items to display on the left-side of modeline.")
+;; (defvar mode-line-right-side-items nil
+;;   "Items to display on the right-side of modeline.")
 
 (use-package spaceline
   :demand t
   :config (progn
+            (use-package all-the-icons
+              :demand t)
             (use-package spaceline-config
               :ensure f
               :demand t
               :config (progn
-                        (with-no-warnings
-                          (spaceline-helm-mode)
-                          (spaceline-toggle-battery-on)
-                          (spaceline-toggle-hud-off)
-                          (spaceline-emacs-theme))))
+                        (spaceline-helm-mode)
+                        (spaceline-toggle-battery-on)
+                        (spaceline-toggle-hud-off)
+                        (spaceline-emacs-theme)))
             (use-package powerline
               :demand t
               :config (setq powerline-height 16
@@ -46,6 +44,7 @@
                   spaceline-byte-compile           t
                   spaceline-separator-dir-left     '(left  . right)
                   spaceline-separator-dir-right    '(right . left))
+
 
 ;;;; *** SPACELINE SEGMENTS ***
             ;; mostly scrapped from spaceline-all-the-icons, but with the benefit
@@ -114,11 +113,12 @@
                           'face `(:height 1.0)
                           'display '(raise 0.0)))
 
+
 ;;;;* ** INITIALIZING THE MODELINE ***
 
-            ;; REFACTOR: `spaceline-install' is apparently the wrong way to go about this.
-            ;;            need to switch to using `spaceline-compile' as soon as I dare.
-
+            ;; REFACTOR: #'spaceline-install is apparently the wrong way to go
+            ;;            about this. need to switch to using #'spaceline-compile
+            ;;            as soon as I dare mess with this house of cards.
 
             (with-no-warnings
               (spaceline-install
@@ -136,7 +136,8 @@
                   ((ati-battery battery) :when active)
                   ((ati-time " ") :when active)))))
 
-  ;;;; *** SPACELINE COLORSCHEME ***
+
+;;;; *** SPACELINE COLORSCHEME ***
   :custom-face
   (spaceline-highlight-face
    ((t (:background "#2257a0" :foreground "#bbc2cf"))))
