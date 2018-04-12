@@ -211,8 +211,21 @@ Then proceed with `cider-connect' to connect into it with
 (use-package sml-mode
   :defer  t
   :mode   ("\\.\\(sml\\|sig\\)\\'" . sml-mode)
-  :config (setq sml-program-name "mosml"
-                  sml-default-arg  "-P full"))
+  :bind   (:map sml-mode-map
+                ("M-;"     . tuareg-comment-dwim)
+                ("C-c . a" . sml-form-abstype)
+                ("C-c . c" . sml-form-case)
+                ("C-c . d" . sml-form-datatype)
+                ("C-c . f" . sml-form-fun)
+                ("C-c . g" . sml-form-signature)
+                ("C-c . i" . sml-form-if)
+                ("C-c . l" . sml-form-let)
+                ("C-c . s" . sml-form-sig)
+                ("C-c . v" . sml-form-val)
+                ("C-c . ." . sml-form-fn)
+                ("C-c . :" . sml-form-struct))
+  :config (setq sml-program-name  "mosml"
+                sml-default-arg   "-P full"))
 
 
 ;;;; *** OCAML ***
@@ -221,15 +234,15 @@ Then proceed with `cider-connect' to connect into it with
   :mode        (("\\.ml[ily]?$" . tuareg-mode)
                 ("\\.topml$"    . tuareg-mode))
   :bind        (:map tuareg-mode-map
-                     ("M-;"   . tuareg-comment-dwim)
-                     ("C-c B" . tuareg-insert-begin-form)
-                     ("C-c C" . tuareg-insert-class-form)
-                     ("C-c F" . tuareg-insert-for-form)
-                     ("C-c I" . tuareg-insert-if-form)
-                     ("C-c L" . tuareg-insert-let-form)
-                     ("C-c M" . tuareg-insert-match-form)
-                     ("C-c T" . tuareg-insert-try-form)
-                     ("C-c W" . tuareg-insert-while-form))
+                     ("M-;"     . tuareg-comment-dwim)
+                     ("C-c . b" . tuareg-insert-begin-form)
+                     ("C-c . c" . tuareg-insert-class-form)
+                     ("C-c . f" . tuareg-insert-for-form)
+                     ("C-c . i" . tuareg-insert-if-form)
+                     ("C-c . l" . tuareg-insert-let-form)
+                     ("C-c . m" . tuareg-insert-match-form)
+                     ("C-c . t" . tuareg-insert-try-form)
+                     ("C-c . w" . tuareg-insert-while-form))
   :config      (progn
                  (setq tuareg-indent-align-with-first-arg            t
                        tuareg-match-patterns-aligned                 t
