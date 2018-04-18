@@ -7,7 +7,7 @@
 ;;;            be called procrastinating.
 
 ;;; Code:
-;;;; *** DOCUMENTS ***
+;;;; *** documents ***
 (use-package nov
   :defer t
   :mode  ("\\.epub\\'" . nov-mode)
@@ -23,7 +23,7 @@
   :config (setq markdown-asymmetric-header t))
 
 
-;;;; *** MUSIC ***
+;;;; *** music (&& videos ??) ***
 (defadvice mingus (after organize ())
   "Refresh and goto current song after entering mingus."
   (mingus-refresh)
@@ -31,8 +31,9 @@
 (ad-activate 'mingus)
 
 (use-package mingus
-  :defer  t
-  :config (use-package mingus-stays-home :ensure f))
+  :disabled t
+  :defer    t
+  :config   (use-package mingus-stays-home :ensure f))
 
 (use-package emms
   :defer   t
@@ -50,7 +51,7 @@
              (emms-default-players)))
 
 
-;;;; *** MESSAGING ***
+;;;; *** messaging ***
 (use-package all-the-icons-gnus
   :defer t
   :config (all-the-icons-gnus-setup))

@@ -46,7 +46,8 @@
                   spaceline-separator-dir-right    '(right . left))
 
 
-;;;; *** SPACELINE SEGMENTS ***
+            ;;;; *** spaceline segments ***
+
             ;; mostly scrapped from spaceline-all-the-icons, but with the benefit
             ;; of having more control over what's happening.
             (spaceline-define-segment ati-modified
@@ -114,7 +115,7 @@
                           'display '(raise 0.0)))
 
 
-;;;;* ** INITIALIZING THE MODELINE ***
+            ;;;; *** modeline initialiation ***
 
             ;; REFACTOR: #'spaceline-install is apparently the wrong way to go
             ;;            about this. need to switch to using #'spaceline-compile
@@ -137,7 +138,7 @@
                   ((ati-time " ") :when active)))))
 
 
-;;;; *** SPACELINE COLORSCHEME ***
+  ;;;; *** spaceline colorscheme ***
   :custom-face
   (spaceline-highlight-face
    ((t (:background "#2257a0" :foreground "#bbc2cf"))))

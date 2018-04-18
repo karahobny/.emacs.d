@@ -5,10 +5,10 @@
 ;;;            Programming language-specific modes and their configuration.
 ;;;            Code (and pretty much everything else) is autocompleted with
 ;;;            company.el and syntax checking through flycheck.el.  Version
-;;             controlling through magit.el of course.
+;;;            controlling through magit.el of course.
 
 ;;; Code:
-;;;; *** COMPANY ***
+;;;; *** productivity ***
 (use-package company
   :diminish (company-mode)
   :bind     (:map company-active-map
@@ -16,20 +16,17 @@
                   ("M-i"   . company-complete)
                   ("C-n"   . company-select-next)
                   ("C-p"   . company-select-previous))
-  :config   (progn
+  :init     (progn
               (setq company-minimum-prefix-length     4
                     company-selection-wrap-around     t
                     company-show-numbers              nil
                     company-idle-delay                0
                     company-tooltip-limit             10
                     company-tooltip-minimum-width     30
-                    company-tooltip-align-annotations t)
-              (add-to-list 'company-backends
-                           'merlin-company-backend))
+                    company-tooltip-align-annotations t))
+  :config   (add-to-list 'company-backends 'merlin-company-backend)
   :hook     (after-init . global-company-mode))
 
-
-;;;; *** FLYCHECK ***
 (use-package flycheck
   :commands (flycheck-mode global-flycheck-mode)
   :diminish (flycheck-mode)
@@ -41,13 +38,20 @@
               (flycheck-checkbashisms-setup)
               (flycheck-haskell-setup))
   :config   (progn
-              (use-package helm-flycheck :after helm)
-              (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
-              (global-flycheck-mode))
+              (use-package helm-flycheck :demand t :after (helm))
+              (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
   :hook     (after-init . global-flycheck-mode))
 
+(use-package magit
+  :defer  t
+  :config (global-magit-file-mode)
+  :bind   (("C-x g"   . magit-status)
+           ("C-x M-g" . magit-dispatch-popup)
+           ("C-c s"   . magit-stage-file)
+           ("C-c C-s" . magit-unstage-file)
+           ("C-c c"   . magit-commit-popup)
+           ("C-c p"   . magit-push-popup)))
 
-;;;; *** ELDOC ***
 (use-package eldoc
   :diminish (eldoc-mode . " ⅇδ ")
   :hook     ((emacs-lisp-mode
@@ -56,37 +60,61 @@
               lisp-interaction-mode)
              . eldoc-mode))
 
+(use-package comment-dwim-2
+  :defer t
+  :bind  ("M-;" . comment-dwim-2))
 
-;;;; *** VERSION CONTROL ***
-(use-package magit
-  :config (progn
-            (global-magit-file-mode))
-  :bind   (("C-x g"   . magit-status)
-           ("C-x M-g" . magit-dispatch-popup)
-           ("C-c s"   . magit-stage-file)
-           ("C-c C-s" . magit-unstage-file)
-           ("C-c c"   . magit-commit-popup)
-           ("C-c p"   . magit-push-popup)))
+(use-package commenter
+  :defer t
+  :init  (setq comment-style 'extra-line)
+  :hook  (tuareg-mode
+          . (lambda ()
+              (setq-local commenter-config
+                          '((single
+                             . ((comment-start      . "(*")
+                                (comment-end        . "*)")
+                                (comment-start-skip . "\\(/(+\\|(\\*+\\)\\s *")))
+                            (multi
+                             . ((comment-start      . "(*")
+                                (comment-end        . " *)")
+                                (comment-start-skip . "(*")
+                                (comment-end-skip   . "*)")
+                                (comment-continue   . " * ")
+                                (comment-padding    . " ")
+                                (comment-multi-line . t)))))
+              (commenter-setup))))
 
-
-;;;; *** PARINFER ***
 (use-package parinfer
   :diminish (parinfer-mode . " π ")
   :bind     (:map parinfer-mode-map
                   ("C-p" . parinfer-toggle-mode))
-  :config   (progn
-              (setq parinfer-extensions
-                    '(defaults pretty-parens smart-yank paredit smart-tab)))
+  :init     (setq parinfer-extensions
+                  '(defaults pretty-parens smart-yank paredit smart-tab))
   :hook     ((clojure-mode
               emacs-lisp-mode
               common-lisp-mode
               scheme-mode
               lisp-mode
-              racket-mode)
+              racket-mode
+              inferior-emacs-lisp-mode)
              . parinfer-mode))
 
+;;;; *** repl / inferior-mode ***
+(defun comint-repl-hook ()
+  "Hook to enhance  `comint' as a proper buffer for repl & inferior-modes."
+  (setq comint-scroll-to-bottom-on-input  t
+        comint-scroll-to-bottom-on-output t
+        comint-scroll-show-maximum-output t
+        comint-move-point-for-output      t))
 
-;;;; *** EMACS LISP ***
+;;;; *** skelly bones ***
+(use-package executable :defer t :init (setq executable-query  'function))
+(use-package time-stamp :defer t :init (setq time-stamp-pattern nil))
+(use-package copyright :hook (before-save . copyright-update))
+(use-package skeleton :defer  t)
+
+
+;;;; *** emacs lisp ***
 (defalias 'eb  #'eval-buffer)
 (defalias 'er  #'eval-region)
 (defalias 'ee  #'eval-expression)
@@ -111,45 +139,52 @@
   (lisp-interaction-mode))
 
 
-;;;; *** COMMON LISP ***
+;;;; *** common lisp ***
 (use-package slime
   :defer    t
-  :diminish (slime-mode . " Σ ")
-  :config   (progn
-              (setq slime-lisp-implementations  '((sbcl ("/usr/local/bin/sbcl")))
-                    slime-contribs              '(slime-fancy))
-              (use-package slime-company
-                :demand t
-                :init   (slime-setup '(slime-company)))))
+  :mode     ("\\.\\(lisp\\|lsp\\|cl\\)\\'" . common-lisp-mode)
+  :diminish ((slime-mode         . " Σ ")
+             (slime-autodoc-mode . " δ "))
+  :init     (setq slime-lisp-implementations '((sbcl ("/usr/local/bin/sbcl")))
+                  slime-contribs             '(slime-fancy)))
+
+(use-package slime-company
+  :defer  t
+  :after  (slime company)
+  :config (slime-setup '(slime-company)))
 
 
-;;;; *** SCHEME AND RACKET ***
-(use-package scheme-mode
+;;;; *** scheme / racket ***
+(use-package scheme
   :ensure f
+  :defer  t
   :mode   ("\\.\\(scm\\|ss\\)\\'" . scheme-mode))
 
 (use-package geiser
+  :defer    t
+  :after    (scheme-mode)
   :defines  (geiser-active-implementations
              geiser-default-implementation
              geiser-mode-start-repl-p
              geiser-debug-jump-to-debug-p
              geiser-guile-load-init-file-p)
-  :diminish (geiser-mode . " γ ") (geiser-autodoc-mode . " δ ")
-  :config   (progn
-              (setq geiser-active-implementations '(guile)
-                    geiser-default-implementation 'guile
-                    geiser-mode-start-repl-p      t
-                    geiser-debug-jump-to-debug-p  nil
-                    geiser-guile-load-init-file-p t)))
+  :diminish ((geiser-mode         . " γ ")
+             (geiser-autodoc-mode . " δ "))
+  :init     (setq geiser-active-implementations '(guile)
+                  geiser-default-implementation 'guile
+                  geiser-mode-start-repl-p      t
+                  geiser-debug-jump-to-debug-p  nil
+                  geiser-guile-load-init-file-p t))
 
 (use-package racket-mode
+  :defer    t
   :diminish (racket-mode . " (λ) ")
   :mode     ("\\.rkt[dl]?\\'" . racket-mode)
   :bind     (:map racket-mode-map
                   ("C-x a" . racket-align))
   :hook     ((racket-mode racket-repl-mode) . racket-unicode-input-method-enable))
 
-;;;; *** CLOJURE ***
+;;;; *** clojure ***
 (defun cider-connect-to-localhost ()
   "Connect with `cider-connect' to an already running REPL at localhost:7800."
   (interactive)
@@ -172,69 +207,52 @@ Then proceed with `cider-connect' to connect into it with
 (defalias 'ecc  #'establish-cider-connection)
 
 (use-package clojure-mode
-  :mode   ("\\.\\(clj\\|boot\\|cljx\\|edn\\|cljs\\|cljs.hl\\)\\'" . clojure-mode)
-  :config (progn
-            (use-package yasnippet
-              :diminish yas-minor-mode
-              :hook     (clojure-mode . yas-minor-mode))
-            (use-package clj-refactor
-              :functions cljr-add-keybindings-with-prefix
-              :diminish  clj-refactor-mode
-              :config    (progn
-                           (setq cljr-suppress-middleware-warnings t)
-                           (cljr-add-keybindings-with-prefix "C-c C-m"))
-              :hook      (clojure-mode . clj-refactor-mode))))
+  :defer  t
+  :mode   ("\\.\\(clj\\|boot\\|cljx\\|edn\\|cljs\\|cljs.hl\\)\\'" . clojure-mode))
+
+(use-package clj-refactor
+  :defer     t
+  :functions (cljr-add-keybindings-with-prefix)
+  :commands  (clj-refactor-mode)
+  :diminish  (clj-refactor-mode . " cλjr ")
+  :init      (setq cljr-suppress-middleware-warnings t)
+  :config    (cljr-add-keybindings-with-prefix "C-c C-m")
+  :hook      (clojure-mode . clj-refactor-mode))
 
 (use-package cider
-  :functions cider-company-enable-fuzzy-completion
-  :after     clojure-mode
-  :config    (progn
-               (setq cider-lein-parameters
-                     "repl :headless localhost :port 7800"
-                     cider-repl-pop-to-buffer-on-connect 'display-only
-                     cider-repl-result-prefix ";; => "
-                     cider-repl-display-help-banner nil))
+  :defer     t
+  :functions (cider-company-enable-fuzzy-completion)
+  :after     (clojure-mode)
+  :commands  (cider-mode)
+  :init      (setq cider-repl-pop-to-buffer-on-connect 'display-only
+                   cider-repl-display-help-banner      nil
+                   cider-repl-result-prefix            ";; ^ eval => "
+                   cider-lein-parameters               "repl
+                                                       :headless localhost
+                                                       :port 7800")
   :hook      (cider-repl-mode . cider-company-enable-fuzzy-completion))
 
 
-;;;; *** HASKELL ***
+;;;; *** haskell ***
 (use-package haskell-mode
-  :mode ("\\.hs\\'" . haskell-mode))
+  :defer t
+  :mode  ("\\.hs\\'" . haskell-mode))
 
 (use-package dante
-  :after    haskell-mode
+  :defer    t
+  :after    (haskell-mode)
   :diminish (dante-mode . "dmc")
   :hook     (haskell-mode . dante-mode))
 
 
-;;;; *** STANDARD ML ***
-(use-package sml-mode
-  :defer  t
-  :mode   ("\\.\\(sml\\|sig\\)\\'" . sml-mode)
-  :bind   (:map sml-mode-map
-                ("M-;"     . tuareg-comment-dwim)
-                ("C-c . a" . sml-form-abstype)
-                ("C-c . c" . sml-form-case)
-                ("C-c . d" . sml-form-datatype)
-                ("C-c . f" . sml-form-fun)
-                ("C-c . g" . sml-form-signature)
-                ("C-c . i" . sml-form-if)
-                ("C-c . l" . sml-form-let)
-                ("C-c . s" . sml-form-sig)
-                ("C-c . v" . sml-form-val)
-                ("C-c . ." . sml-form-fn)
-                ("C-c . :" . sml-form-struct))
-  :config (setq sml-program-name  "mosml"
-                sml-default-arg   "-P full"))
-
-
-;;;; *** OCAML ***
+;;;; *** ocaml ***
 (use-package tuareg
   :defer       t
   :mode        (("\\.ml[ily]?$" . tuareg-mode)
                 ("\\.topml$"    . tuareg-mode))
   :bind        (:map tuareg-mode-map
-                     ("M-;"     . tuareg-comment-dwim)
+                     ("M-RET"   . utop-eval-phrase)
+                     ("M-;"     . comment-dwim-2)
                      ("C-c . b" . tuareg-insert-begin-form)
                      ("C-c . c" . tuareg-insert-class-form)
                      ("C-c . f" . tuareg-insert-for-form)
@@ -243,15 +261,24 @@ Then proceed with `cider-connect' to connect into it with
                      ("C-c . m" . tuareg-insert-match-form)
                      ("C-c . t" . tuareg-insert-try-form)
                      ("C-c . w" . tuareg-insert-while-form))
+  :init        (setq tuareg-indent-align-with-first-arg            t
+                     tuareg-match-patterns-aligned                 t
+                     tuareg-use-abbrev-mode                        nil
+                     tuareg-interactive-scroll-to-bottom-on-output t)
   :config      (progn
-                 (setq tuareg-indent-align-with-first-arg            t
-                       tuareg-match-patterns-aligned                 t
-                       tuareg-use-abbrev-mode                        nil
-                       tuareg-interactive-scroll-to-bottom-on-output t)
-                 (use-package ocp-indent))
-  :custom-face (tuareg-font-double-colon-face ((t :foreground "dimgray"))))
+                 (use-package ocp-indent
+                   :ensure f
+                   :demand t)
+                 (setq-local indent-line-function          'ocp-indent-line)
+                 (setq-local indent-region-function        'ocp-indent-region)
+                 (setq-local company-minimum-prefix-length 2))
+  :custom-face (tuareg-font-double-colon-face
+                ((t :foreground "dimgray"))))
 
 (use-package merlin
+  :ensure   f
+  :defer    t
+  :after    (tuareg-mode)
   :diminish (merlin-mode . "mahou shoujo")
   :bind     (:map merlin-mode-map
                   ("M-."        . merlin-locate)
@@ -261,14 +288,17 @@ Then proceed with `cider-connect' to connect into it with
                   ("C-c C-i"    . merlin-locate-ident)
                   ("C-c <up>"   . merlin-type-enclosing-go-up)
                   ("C-c <down>" . merlin-type-enclosing-go-down))
-  :config   (setq merlin-error-after-save    nil
+  :init     (setq merlin-error-after-save    nil
                   merlin-command             'opam
                   merlin-completion-with-doc t)
   :hook     (tuareg-mode . merlin-mode))
 
 (use-package utop
-  :diminish utop-minor-mode
-  :config   (setq utop-command "opam config exec -- utop -emacs")
+  :ensure   f
+  :defer    t
+  :after    (tuareg-mode)
+  :diminish (utop-minor-mode)
+  :init     (setq utop-command "utop -emacs")
   :hook     (tuareg-mode . utop-minor-mode))
 
 (provide 'init-prog)

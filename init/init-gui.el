@@ -8,7 +8,7 @@
 ;;;            it's own.
 
 ;;; Code:
-;;;; *** GENERAL UX ***
+;;;; *** general emacs user interface (frame) ***
 (setq menu-bar-mode      nil
       tool-bar-mode      nil
       use-dialog-box     nil
@@ -19,7 +19,7 @@
 
 (use-package tmm
   :ensure f
-  :bind   ("C-c b" . tmm-menubar))
+  :bind   (("C-c b" . tmm-menubar)))
 
 (setq initial-scratch-message ";;
 ;;	 　　∧＿∧
@@ -32,92 +32,88 @@
 ;;
 \n")
 
-(use-package which-key
-  :defer    50
-  :diminish which-key-mode
-  :init     (progn
-              (which-key-setup-side-window-right-bottom)
-              (which-key-mode)))
+
+;;;; *** user theme ***
+(use-package doom-themes
+  :ensure    f
+  :demand    t
+  :functions (doom-themes-neotree-config doom-themes-org-config)
+  :config    (progn
+               (setq custom-safe-themes t)
+               (doom-themes-neotree-config)
+               (doom-themes-org-config)
+               (set-face-attribute 'vertical-border nil :foreground "#23272e"))
+  :init      (load-theme 'doom-one t))
 
 
-;;;; *** BUFFERS ***
+;;;; *** buffers ***
 (defalias 'list-buffers #'ibuffer)
 (global-set-key (kbd "C-<right>") #'next-buffer)
 (global-set-key (kbd "C-<left>")  #'previous-buffer)
 
 (use-package nlinum
-  :config (progn
-            (setq nlinum-format "%4d ")
-            (use-package nlinum-relative
-              :bind        (("M-n"     . nlinum-relative-toggle)
-                            ("C-c r"   . nlinum-relative-toggle)
-                            ("C-c C-r" . nlinum-relative-toggle))
-              :custom-face (nlinum-relative-current-face
-                            ((t :inherit    linum     :weight     bold
-                                :foreground "#bbc2cf" :background "#23272e")))))
+  :config (setq nlinum-format "%4d ")
   :hook   (prog-mode . nlinum-mode))
+
+(use-package nlinum-relative
+  :defer       t
+  :after       (nlinum)
+  :bind        (("M-n"     . nlinum-relative-toggle)
+                ("C-c r"   . nlinum-relative-toggle)
+                ("C-c C-r" . nlinum-relative-toggle))
+  :custom-face (nlinum-relative-current-face
+                ((t :inherit    linum     :weight     bold
+                    :foreground "#bbc2cf" :background "#23272e"))))
+
+(use-package simple
+  :ensure   f
+  :demand   t
+  :diminish (visual-line-mode)
+  :config   (setq delete-trailing-lines t)
+  :config   (global-visual-line-mode)
+  :bind     (("C-c g" . goto-line))
+  :hook     (before-save . delete-trailing-whitespace))
 
 (use-package paren
   :ensure f
-  :config (progn
-            (setq show-paren-delay                   0
-                  show-paren-highlight-openparen     t
-                  show-paren-when-point-inside-paren t
-                  show-paren-when-point-in-periphery t))
+  :demand t
+  :config (setq show-paren-delay                   0
+                show-paren-highlight-openparen     t
+                show-paren-when-point-inside-paren t
+                show-paren-when-point-in-periphery t)
   :hook   (after-init . show-paren-mode))
 
 (use-package indent-guide
-  :diminish    indent-guide-mode
-  :config      (progn
-                 (setq indent-guide-char "¦")
-                 (indent-guide-global-mode))
+  :diminish    (indent-guide-mode)
+  :config      (setq indent-guide-char "¦")
   :hook        ((prog-mode text-mode) . indent-guide-mode)
   :custom-face (indent-guide-face
                 ((t :foreground "dimgray" :background "default"))))
 
-;; prog-mode initialized just for ``prettify-symbols-mode''
-(use-package prog-mode
-  :ensure   f
-  :defer    t
-  :commands (prettify-symbols-mode global-prettify-symbols-mode)
-  :config   (progn
-              (setq prettify-symbols-alist
-                    '(("lambda" . 955)))
-              (global-prettify-symbols-mode +1))
-  :hook     (prog-mode . prettify-symbols-mode))
-
-(use-package simple
-  :ensure    f
-  :diminish  visual-line-mode
-  :config    (progn
-               (setq delete-trailing-lines t))
-  :init      (global-visual-line-mode)
-  :bind      ("C-c g" . goto-line)
-  :hook      (before-save . delete-trailing-whitespace))
-
 (use-package browse-url
   :ensure f
-  :defer  t
   :init   (setq browse-url-browser-function 'browse-url-generic
                 browse-url-generic-program  "chrome"))
 
 
-;;;; *** WINDOWS / LAYOUTS ***
+;;;; *** windows and their layout ***
 (use-package winner
-  :defer  50
-  :config (winner-mode 1)
+  :demand t
+  :config (winner-mode)
   :bind   (("M-N" . winner-redo)
            ("M-P" . winner-undo)))
 
 (use-package windmove
-  :bind (("M-<up>"    . windmove-up)
-         ("M-<left>"  . windmove-left)
-         ("M-<down>"  . windmove-down)
-         ("M-<right>" . windmove-right)))
+  :defer t
+  :bind  (("M-<up>"    . windmove-up)
+          ("M-<left>"  . windmove-left)
+          ("M-<down>"  . windmove-down)
+          ("M-<right>" . windmove-right)))
 
 (use-package ace-window
-  :bind (("M-o"   . ace-window)
-         ("C-c o" . ace-window)))
+  :defer t
+  :bind  (("M-o"   . ace-window)
+          ("C-c o" . ace-window)))
 
 ;;    ((super + [left/up/down/...) bound in ~/.exwm-x to not accientally override
 ;;     or more likely just plain overlap other possible window manager's
@@ -191,16 +187,16 @@ FRAME-WIDTH is larger than FRAME-HEIGHT.")
 (global-set-key (kbd "M-S-<right>") #'my-enlarge-win-horiz)
 
 
-;;;; *** HELM ***
+;;;; *** helm ***
 (use-package helm
   :defer    t
-  :diminish helm-mode
-  :config   (progn
+  :diminish (helm-mode)
+  :init     (progn
               (use-package helm-config  :ensure f)
               (setq helm-split-window-inside-p        t
                     helm-move-to-line-cycle-in-source t
                     helm-echo-input-in-header-line    t))
-  :init     (helm-mode)
+  :config   (helm-mode)
   :bind     (("M-x"     . helm-M-x)
              ("C-x C-m" . helm-M-x)
              ("C-c C-m" . helm-M-x)
@@ -209,19 +205,19 @@ FRAME-WIDTH is larger than FRAME-HEIGHT.")
 
 ;; changed default HELM-GOOGLE-ACTIONS to use eww by default.
 (use-package helm-google
-  :defer  t
-  :config (progn
-            (setq helm-google-idle-delay 1
-                  helm-google-actions
-                  '(("Browse URL with EWW"
-                     . (lambda (candidate) (eww-browse-url candidate)))
-                    ("Browse URL with default program" . browse-url)
-                    ("Copy URL to clipboard"
-                     . (lambda (candidate) (kill-new candidate))))))
-  :bind   ("C-h C--" . helm-google))
+  :defer t
+  :init  (setq helm-google-idle-delay 1
+               helm-google-actions
+               '(("Browse URL with EWW"
+                  . (lambda (candidate) (eww-browse-url candidate)))
+                 ("Browse URL with default program"
+                  . browse-url)
+                 ("Copy URL to clipboard"
+                  . (lambda (candidate) (kill-new candidate)))))
+  :bind  ("C-h C--" . helm-google))
 
 
-;;;; *** USER INPUT ***
+;;;; *** user input ***
 (global-set-key (kbd "RET")    #'newline-and-indent)
 (global-set-key (kbd "<home>") #'beginning-of-line)
 (global-set-key (kbd "<end>")  #'end-of-line)
@@ -236,10 +232,9 @@ FRAME-WIDTH is larger than FRAME-HEIGHT.")
 
 (use-package undo-tree
   :defer     t
-  :diminish  undo-tree-mode
-  :functions global-undo-tree-mode
-  :config    (progn
-               (global-undo-tree-mode))
+  :diminish  (undo-tree-mode)
+  :functions (global-undo-tree-mode)
+  :init      (global-undo-tree-mode)
   :bind      (("C-z"   . undo-tree-undo)
               ("C-r"   . undo-tree-redo)
               ("C-Z"   . undo-tree-redo)
@@ -249,14 +244,23 @@ FRAME-WIDTH is larger than FRAME-HEIGHT.")
   :ensure   f
   :diminish (isearch-mode . "ⅈ"))
 
+(use-package imenu
+  :ensure f
+  :init   (setq imenu-auto-rescan t))
+
+(use-package imenu-list
+  :defer t
+  :after (imenu)
+  :init  (setq imenu-list-auto-resize            t
+               imenu-list-focus-after-activation t
+               imenu-list-position               'left)
+  :bind  ("C-c l" . imenu-list-smart-toggle))
+
 (use-package centered-cursor-mode
   :defer    t
   :diminish (centered-cursor-mode . "-+-")
+  :commands (centered-cursor-mode)
   :bind     ("C-c -"   . centered-cursor-mode))
-
-(use-package comment-dwim-2
-  :defer t
-  :bind  ("M-;" . comment-dwim-2))
 
 (defun smart-line-beginning ()
   "Move point to the beginning of text on the current line; if that is already
@@ -292,19 +296,16 @@ Depending on whether or not a region is selected."
 (global-set-key (kbd "C-c e") #'eval-and-replace)
 
 
-;;;; *** HIGHLIGHTS ***
+;;;; *** text highlighting ***
 (defvar column-char-limit 82
   "Highlight characters going over the specified amount of columns/characters.")
 
 (use-package whitespace
   :ensure   f
   :defer    t
-  :diminish whitespace-mode
-  :config   (progn
-              (setq whitespace-line-column column-char-limit
-                    whitespace-style       '(face lines-tail)))
-  ;; (dolist (mode-str char-limited-modes)
-  ;;   (add-hook mode-str #'whitespace-mode)))
+  :diminish (whitespace-mode)
+  :init     (setq whitespace-line-column column-char-limit
+                  whitespace-style       '(face lines-tail))
   :hook     ((prog-mode
               emacs-lisp-mode
               lisp-mode
@@ -315,6 +316,22 @@ Depending on whether or not a region is selected."
               tuareg-mode)
              . whitespace-mode))
 
+;; prog-mode initialized just for #'prettify-symbols-mode
+;; FIXME: only lambda working. probably due to some other
+;;        function or something.
+
+(use-package prog-mode
+  :ensure   f
+  :demand   t
+  :commands (prettify-symbols-mode global-prettify-symbols-mode)
+  :init     (setq prettify-symbols-alist
+                  '(
+                    ("lambda"   . ?λ)
+                    ;; ("lambda"   . 955)
+                    ("subset"   . ?⊂)
+                    ("superset" . ?⊃)
+                    ("member"   . ?∈)))
+  :hook     (prog-mode . prettify-symbols-mode))
 
 (defun font-lock-comment-annotations ()
   "Highlight a bunch of well known comment annotations.
@@ -338,73 +355,60 @@ This functions should be added to the hooks of major modes for programming."
   (add-hook mode-str #'font-lock-comment-annotations))
 
 
-;;;; *** USER THEMES ***
-(setq custom-safe-themes t)
-(use-package doom-themes
-  :ensure f
-  :demand t
-  :config (progn
-            (doom-themes-neotree-config)
-            (doom-themes-org-config)
-            (set-face-attribute 'vertical-border nil :foreground "#23272e"))
-  :init   (load-theme 'doom-one t))
-
-
-;;;; *** DIMINISHING MODES ***
+;;;; *** major mode diminishing ***
 (use-package cyphejor
   :demand t
   :hook   (after-init . cyphejor-mode)
-  :config (progn
-            (setq cyphejor-rules
-                  '(:downcase
-                    ("exwm"            "ⅇ𝕩")
-                    ("apropos"         "apropos")
-                    ("bookmark"        "→")
-                    ("messages"        "msg")
-                    ("buffer"          "")
-                    ("fundamental"     "")
-                    ("special"         "")
-                    ("hmm"             "")
-                    ("help"            "?")
-                    ("ibuffer"         "β")
-                    ("compilation"     "!")
-                    ("compiling"       "...")
-                    ("custom"          "custom")
-                    ("diff"            "diff")
-                    ("dired"           "dir")
-                    ("debug"           "!")
-                    ("helm"            "")
-                    ("esup"            "GOTTA GO FAST")
-                    ("emacs"           "ⅇ")
-                    ("inferior"        "𝕚" :prefix)
-                    ("interaction"     "𝕚" :prefix)
-                    ("interactive"     "𝕚" :prefix)
-                    ("emacs-lisp"      "ⅇλ")
-                    ("suggest"         "Σⅇλ")
-                    ;; ("lisp"            "λ")
-                    ;; ("scheme"          "λ")
-                    ("lisp"            "λ")
-                    ("scheme"          "Σ")
-                    ("clojure"         "𝕔λⅉ")
-                    ;; ("clojure"         "cλj")
-                    ("geiser"          "γ")
-                    ("racket"          "(λ)")
-                    ("repl"            "")
-                    ("sml"             "ml")
-                    ("tuareg"          "cαml")
-                    ("haskell"         "〉λ꞊")
-                    ("sh"              "#!")
-                    ("menu"            "")
-                    ("mode"            "")
-                    ("package"         "↓")
-                    ("paradox"         "↓")
-                    ("nov"             "（´ω ` * ）")
-                    ("docview"         "（　´_ゝ`）")
-                    ("eshell"          "ⅇ/>_")
-                    ("term"            "†/>_")
-                    ("text"            "txt")
-                    ("org"             "ø")
-                    ("wdired"          "↯/dir")))))
+  :config (setq cyphejor-rules
+                '(:downcase
+                  ("exwm"            "ⅇ𝕩")
+                  ("apropos"         "apropos")
+                  ("bookmark"        "→")
+                  ("messages"        "msg")
+                  ("buffer"          "")
+                  ("fundamental"     "")
+                  ("special"         "")
+                  ("hmm"             "")
+                  ("help"            "?")
+                  ("ibuffer"         "β")
+                  ("compilation"     "!")
+                  ("compiling"       "...")
+                  ("custom"          "custom")
+                  ("diff"            "diff")
+                  ("dired"           "dir")
+                  ("debug"           "!")
+                  ("helm"            "")
+                  ("esup"            "GOTTA GO FAST")
+                  ("emacs"           "ⅇ")
+                  ("inferior"        "𝕚" :prefix)
+                  ("interaction"     "𝕚" :prefix)
+                  ("interactive"     "𝕚" :prefix)
+                  ("emacs-lisp"      "ⅇλ")
+                  ("suggest"         "Σⅇλ")
+                  ;; ("lisp"            "λ")
+                  ;; ("scheme"          "λ")
+                  ("lisp"            "λ")
+                  ("scheme"          "Σ")
+                  ("clojure"         "𝕔λⅉ")
+                  ;; ("clojure"         "cλj")
+                  ("geiser"          "γ")
+                  ("racket"          "(λ)")
+                  ("repl"            "")
+                  ("sml"             "ml")
+                  ("tuareg"          "cαml")
+                  ("haskell"         "〉λ꞊")
+                  ("sh"              "#!")
+                  ("menu"            "")
+                  ("mode"            "")
+                  ("package"         "↓")
+                  ("paradox"         "↓")
+                  ("nov"             "（´ω ` * ）")
+                  ("docview"         "（　´_ゝ`）")
+                  ("eshell"          "ⅇ/>_")
+                  ("term"            "†/>_")
+                  ("text"            "txt")
+                  ("org"             "ø")
+                  ("wdired"          "↯/dir"))))
 
 (provide 'init-gui)
 ;;; init-gui.el ends here

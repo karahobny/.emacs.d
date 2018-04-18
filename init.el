@@ -8,8 +8,26 @@
 
 ;;; Code:
 ;; (package-initialize)
+;;;; *** misc. functions ***
+(require 'cl)
 
-;;;; ** VARIABLES AND INITIALIZATIVE FUNCTIONS **
+(defmacro fn (fn &rest args)
+  `(funcall (quote ,fn) ,@args))
+
+(defalias 'act #'interactive)
+
+(defun kb>>b (β)
+  "Convert kilobytes to bytes."
+  (act)
+  (* 1024 β))
+
+(defun mb>>b (β)
+  "Convert megabytes to bytes."
+  (act)
+  (* 1024 (fn kb>>b β)))
+
+
+;;;; *** variables and init functions ***
 (defconst user-config-folder
   "~/.emacs.d/init"
   "User's defined folder for configuration-files.")
@@ -32,67 +50,51 @@ Default is set to initialize the files separately (nil).")
     init-gui
     init-modeline
     init-fira-code-ligatures)
-  "List of the user's configuration files to initialize.
-Checked only if load-all-files-from-config-folder set to nil")
+  "List and order of the user's configuration files to initialize.
+Checked only if LOAD-ALL-FILES-FROM-CONFIG-FOLDER is set to nil")
 
 (defconst compile-user-config-folder t
-  "Check if user-config-folder has files to be byte-compiled.")
-
-;; REFACTOR:
-;;           ** dolist vs. cl-loop vs. mapc benchmarking. **
-;;           wildly different results due to alignment of the stars or
-;;           something as inexplicable. `dolist' and `cl-loop' seem
-;;           to be the definite top contenders (also tried with dash.el's
-;;           `-map'-function, but it seemed even more costly than `mapc'.
-
-;;           saved the cl-loop-codesnippet for posterity's sake:
-;;           (cl-loop for file
-;;                    in user-config-files
-;;                    collect (require file))
+  "Check if USER-CONFIG-FOLDER has files to be byte-compiled.")
 
 (defun initialize-user-config-files ()
-  "The money shot. Initializes either user's defined `user-config-files' in that
-order, or indiscriminately every .el/.elc file from `user-config-folder'."
+  "The money shot. Initializes either user's defined files in USER-CONFIG-FILES in
+the specified order, or indiscriminately probes to #'require every .el/.elc file
+from USER-CONFIG-FOLDER."
   (if (null load-all-files-from-config-folder)
       (dolist (file user-config-files)
         (require file))
     (dolist (file (directory-files user-config-folder t ".\\.elc?$"))
       (load-library file))))
 
-;;;; ** GARBAGE COLLECTION **
-;; hlissner's doom-emacs gc speedup trix
-(defconst gc-threshold-max 402653184
-  "Maximum threshold for garbage collection.")
-(defconst gc-threshold-min 16777216
-  "Minimum threshold for garbage collection.")
-(defconst gc-percentage-max 0.6
-  "Maximum threshold for garbage collection.")
-(defconst gc-percentage-min 0.1
-  "Minimum threshold for garbage collection.")
+
+;;;; *** garbage collection ***
+(setq-default garbage-collection-messages nil)
 
 (defvar file-name-handler-alist-orig file-name-handler-alist
-  "Placeholder for original file-name-handler-alist setting.")
+  "Placeholder for original FILE-NAME-HANDLER-ALIST setting.")
 
 (defun gc-eval-max-threshold ()
-  "Set `gc-cons-threshold' to maximum defined amount."
-  (setq gc-cons-threshold  gc-threshold-max
-        gc-cons-percentage gc-percentage-max))
+  "Set `gc-cons-threshold' to a maximum defined amount."
+  (interactive)
+  (setq gc-cons-threshold  104857600 ;; 100mb
+        gc-cons-percentage 0.6))
 
 (defun gc-eval-min-threshold ()
-  "Set `gc-cons-threshold' to minimum defined amount."
-  (setq gc-cons-threshold  gc-threshold-min
-        gc-cons-percentage gc-percentage-min))
+  "Set `gc-cons-threshold' to a minimum defined amount ."
+  (interactive)
+  (setq gc-cons-threshold  10485760    ;; 10mb
+        gc-cons-percentage 0.1))
 
 (defun gc-eval-at-startup ()
-  "Garbage collection to handle at Emacs' startup."
+  "Garbage collection settings unique to Emacs' startup."
   (garbage-collect)
   (gc-eval-min-threshold)
   (setq file-name-handler-alist file-name-handler-alist-orig)
   (makunbound 'file-name-handler-alist-orig))
 
-;;;; ** INITIALIZATION **
-(progn
-  (gc-eval-max-threshold)
+
+;;;; *** initialization ***
+(let ((gc-cons-threshold  most-positive-fixnum))
   (setq inhibit-startup-screen  t
         file-name-handler-alist nil
         load-prefer-newer       t
@@ -105,7 +107,7 @@ order, or indiscriminately every .el/.elc file from `user-config-folder'."
   (add-to-list 'load-path user-config-folder)
   (initialize-user-config-files))
 
-(run-with-idle-timer 5 nil       #'gc-eval-at-startup)
+(run-with-idle-timer 2 nil       #'gc-eval-at-startup)
 (add-hook 'minibuffer-setup-hook #'gc-eval-max-threshold)
 (add-hook 'minibuffer-exit-hook  #'gc-eval-min-threshold)
 (add-hook 'focus-out-hook        #'garbage-collect)

@@ -7,7 +7,7 @@
 ;;;            Might need to organize eshell configuration to its own init-file.
 
 ;;; Code:
-;;;; *** PACKAGE MANAGEMENT ***
+;;;; *** package management ***
 (require 'package)
 (setq package-enable-at-startup  nil
       package--init-file-ensured t)
@@ -36,7 +36,7 @@
            ("C-x C-p" . paradox-list-packages)))
 
 
-;;;; *** LOCALE ***
+;;;; *** locale ***
 (set-language-environment   "UTF-8")
 (set-default-coding-systems 'utf-8)
 (setq locale-coding-system  'utf-8)
@@ -47,7 +47,7 @@
   (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
 
 
-;;;; *** BACKUPS / AUTOSAVES / AUTOCOMPILING ***
+;;;; *** file management ***
 (setq backup-directory-alist        `(("." . "~/.emacs.d/backup"))
       backup-by-copying-when-linked t
       version-control               t
@@ -74,8 +74,22 @@
             (setq auto-compile-display-buffer   nil
                   auto-compile-update-autoloads t)))
 
+(use-package dired
+  :ensure f
+  :defer  t
+  :config (progn
+            (when (eq system-type 'berkeley-unix)
+              (setq dired-use-ls-dired nil))
+            (use-package all-the-icons-dired
+              :defer  t
+              :hook   (dired-mode . all-the-icons-dired-mode))
+            (use-package neotree
+              :defer  t
+              :config (setq neo-theme 'icons)
+              :bind   ("C-x C-n" . neotree-toggle))))
 
-;;;; *** ESHELL ***
+
+;;;; *** eshell ***
 (defvar eshell-banner-message nil
   "Banner for Eshell to replace the default one.")
 
@@ -113,37 +127,6 @@ Otherwise defaults to Eshell-default welcoming you."
               :hook (eshell-mode . eshell-bookmark-setup)))
   :bind   (("C-c §" . eshell)
            ("C-x §" . eshell)))
-
-
-;;;; *** FILESYSTEM ***
-(use-package dired
-  :ensure f
-  :defer  t
-  :config (progn
-            (when (eq system-type 'berkeley-unix)
-              (setq dired-use-ls-dired nil))
-            (use-package all-the-icons-dired
-              :ensure t
-              :defer  t
-              :hook   (dired-mode . all-the-icons-dired-mode))))
-
-(use-package neotree
-  :ensure t
-  :defer  t
-  :config (setq neo-theme 'icons)
-  :bind   ("C-x C-n" . neotree-toggle))
-
-
-;;;; *** IMENU ***
-(use-package imenu
-  :ensure f
-  :config (progn
-            (setq imenu-auto-rescan t)
-            (use-package imenu-list
-              :config (setq imenu-list-auto-resize            t
-                            imenu-list-focus-after-activation t
-                            imenu-list-position               'left)
-              :bind   ("C-c l" . imenu-list-smart-toggle))))
 
 (provide 'init-system)
 ;;; init-system.el ends here

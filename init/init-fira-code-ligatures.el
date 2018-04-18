@@ -33,11 +33,22 @@
             ("\\(\\\\\\\\\\)"              #Xe106)
             ("\\(\\\\\\\\\\\\\\)"          #Xe107)
             ("\\({-\\)"                    #Xe108)
+            ;; box-looking character ([], aka list operator) looks
+            ;; too much like unicode missing-glyph icon. also the cons
+            ;; operator (::), along with the list ([]), both fuck up
+            ;; the alignment of sml and haskell-code far too goddamn
+            ;; often to be of any aesthetical use, rather an irritant
+            ;; if anything.
+
+            ;; TODO: FIXME: fix these by adding fake spaces to them?
+
             ;; ("\\(\\[\\]\\)"                #Xe109)
-            ("\\(::\\)"                    #Xe10a)
+            ;; ("\\(::\\)"                    #Xe10a)
             ("\\(:::\\)"                   #Xe10b)
             ("[^=]\\(:=\\)"                #Xe10c)
-            ("\\(!!\\)"                    #Xe10d)
+            ;; ("\\(!!\\)"                    #Xe10d)
+            ;; this should be hooked to sml-mode only
+            ("\\(<>\\)"                    #Xe10e)
             ("\\(!=\\)"                    #Xe10e)
             ("\\(!==\\)"                   #Xe10f)
             ("\\(-}\\)"                    #Xe110)
@@ -115,7 +126,7 @@
             ("\\(<==\\)"                   #Xe158)
             ("\\(<=>\\)"                   #Xe159)
             ("\\(<=<\\)"                   #Xe15a)
-            ("\\(<>\\)"                    #Xe15b)
+            ;; ("\\(<>\\)"                    #Xe15b)
             ("[^-=]\\(<<\\)"               #Xe15c)
             ("\\(<<-\\)"                   #Xe15d)
             ("\\(<<=\\)"                   #Xe15e)
@@ -139,9 +150,9 @@
   "Add the Fira Code ligatures from Fira Code Symbol to selected keywords."
   (font-lock-add-keywords nil fira-code-font-lock-keywords-alist))
 
-(add-hook 'prog-mode-hook #'add-fira-code-symbol-keywords)
-(add-hook 'scheme-mode-hook #'add-fira-code-symbol-keywords)
-(add-hook 'clojure-mode-hook #'add-fira-code-symbol-keywords)
+(add-hook 'prog-mode-hook    #'add-fira-code-symbol-keywords)
+;; (add-hook 'scheme-mode-hook  #'add-fira-code-symbol-keywords)
+;; (add-hook 'clojure-mode-hook #'add-fira-code-symbol-keywords)
 
 (provide 'init-fira-code-ligatures)
 ;;; init-fira-code-ligatures.el ends here
